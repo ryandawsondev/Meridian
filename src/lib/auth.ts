@@ -16,7 +16,7 @@ export async function signIn() {
     provider: 'google',
     options: {
       scopes: GOOGLE_CALENDAR_SCOPE,
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}auth/callback`,
     },
   })
   if (error) throw error
