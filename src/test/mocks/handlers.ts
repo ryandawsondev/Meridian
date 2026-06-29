@@ -1,7 +1,19 @@
-import { http } from 'msw'
+import { http, HttpResponse } from 'msw'
 
-export const handlers = [
-  // Supabase and Google Calendar handlers added per milestone
+const SUPABASE_URL = 'http://localhost:54321'
+
+export const authHandlers = [
+  http.get(`${SUPABASE_URL}/auth/v1/user`, () => {
+    return HttpResponse.json({
+      id: 'user-123',
+      email: 'test@example.com',
+      user_metadata: { full_name: 'Test User' },
+    })
+  }),
+
+  http.post(`${SUPABASE_URL}/auth/v1/logout`, () => {
+    return new HttpResponse(null, { status: 204 })
+  }),
 ]
 
-export type { http }
+export const handlers = [...authHandlers]

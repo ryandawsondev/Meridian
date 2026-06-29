@@ -1,5 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import ProtectedRoute from './components/layout/ProtectedRoute'
+import SignInPage from './pages/SignInPage'
+import AuthCallbackPage from './pages/AuthCallbackPage'
 import PlanningPage from './pages/PlanningPage'
 import PresetsPage from './pages/PresetsPage'
 import PreviewPage from './pages/PreviewPage'
@@ -12,11 +15,41 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          <Route path="/sign-in" element={<SignInPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route
+            path="/planning"
+            element={
+              <ProtectedRoute>
+                <PlanningPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/presets"
+            element={
+              <ProtectedRoute>
+                <PresetsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/preview"
+            element={
+              <ProtectedRoute>
+                <PreviewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <HistoryPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/" element={<Navigate to="/planning" replace />} />
-          <Route path="/planning" element={<PlanningPage />} />
-          <Route path="/presets" element={<PresetsPage />} />
-          <Route path="/preview" element={<PreviewPage />} />
-          <Route path="/history" element={<HistoryPage />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
