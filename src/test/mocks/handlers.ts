@@ -96,6 +96,43 @@ export const supabaseHandlers = [
   // user_settings
   http.get(`${BASE}/user_settings`, () => HttpResponse.json(fixtures.userSettings)),
   http.post(`${BASE}/user_settings`, () => new HttpResponse(null, { status: 201 })),
+
+  // published_weeks
+  http.get(`${BASE}/published_weeks`, () => HttpResponse.json([])),
+  http.post(`${BASE}/published_weeks`, () =>
+    HttpResponse.json({ id: 'pw-1', user_id: 'user-123', week_start: '2024-06-24', week_preset_id: null, created_at: '2026-01-01T00:00:00Z' }, { status: 201 })
+  ),
+
+  // published_events
+  http.get(`${BASE}/published_events`, () => HttpResponse.json([])),
+  http.post(`${BASE}/published_events`, () => new HttpResponse(null, { status: 201 })),
 ]
 
-export const handlers = [...authHandlers, ...supabaseHandlers]
+// ─── Google Calendar API handlers ────────────────────────────────────────────
+
+const GCAL = 'https://www.googleapis.com/calendar/v3/calendars'
+
+export const gcalEvent = {
+  id: 'gcal-event-1',
+  summary: 'Morning Routine',
+  description: null,
+  start: { dateTime: '2024-06-24T07:00:00Z' },
+  end: { dateTime: '2024-06-24T08:00:00Z' },
+}
+
+export const gcalHandlers = [
+  http.post(`${GCAL}/:calendarId/events`, () =>
+    HttpResponse.json(gcalEvent, { status: 200 })
+  ),
+  http.patch(`${GCAL}/:calendarId/events/:eventId`, () =>
+    HttpResponse.json({ ...gcalEvent, summary: 'Updated Event' }, { status: 200 })
+  ),
+  http.delete(`${GCAL}/:calendarId/events/:eventId`, () =>
+    new HttpResponse(null, { status: 204 })
+  ),
+  http.get(`${GCAL}/:calendarId/events`, () =>
+    HttpResponse.json({ items: [gcalEvent] }, { status: 200 })
+  ),
+]
+
+export const handlers = [...authHandlers, ...supabaseHandlers, ...gcalHandlers]

@@ -40,3 +40,22 @@ export interface DbUserSettings {
   default_week_preset_id: string | null
   preferred_view: string
 }
+
+export interface DbPublishedWeek {
+  id: string
+  user_id: string
+  week_start: string
+  week_preset_id: string | null
+  created_at: string
+}
+
+export interface DbPublishedEvent {
+  id: string
+  published_week_id: string
+  google_calendar_event_id: string
+  block_id: string | null
+  day_date: string
+  title: string
+  start_time: string
+  end_time: string
+}
