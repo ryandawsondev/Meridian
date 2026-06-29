@@ -14,7 +14,7 @@ const queryClient = new QueryClient()
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename="/Meridian">
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
