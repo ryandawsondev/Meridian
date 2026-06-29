@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Block, FilledBlock } from '../../types'
 import { usePlanningStore } from '../../stores/planningStore'
@@ -87,16 +87,6 @@ export default function VariableBlockForm({ block, error }: VariableBlockFormPro
       sync(title, notes, subTasks, next)
     }
   }
-
-  // Sync from store if external reset
-  useEffect(() => {
-    if (!existing) {
-      setTitle('')
-      setNotes('')
-      setSubTasks([])
-      setShowSubTasks(false)
-    }
-  }, [existing])
 
   return (
     <div

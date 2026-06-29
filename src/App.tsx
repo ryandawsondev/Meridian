@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ProtectedRoute from './components/layout/ProtectedRoute'
+import AppShell from './components/layout/AppShell'
 import SignInPage from './pages/SignInPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import PlanningPage from './pages/PlanningPage'
@@ -21,7 +22,9 @@ export default function App() {
             path="/planning"
             element={
               <ProtectedRoute>
-                <PlanningPage />
+                <AppShell>
+                  <PlanningPage />
+                </AppShell>
               </ProtectedRoute>
             }
           />
@@ -29,7 +32,9 @@ export default function App() {
             path="/presets"
             element={
               <ProtectedRoute>
-                <PresetsPage />
+                <AppShell>
+                  <PresetsPage />
+                </AppShell>
               </ProtectedRoute>
             }
           />
@@ -37,7 +42,9 @@ export default function App() {
             path="/preview"
             element={
               <ProtectedRoute>
-                <PreviewPage />
+                <AppShell>
+                  <PreviewPage />
+                </AppShell>
               </ProtectedRoute>
             }
           />
@@ -45,7 +52,9 @@ export default function App() {
             path="/history"
             element={
               <ProtectedRoute>
-                <HistoryPage />
+                <AppShell>
+                  <HistoryPage />
+                </AppShell>
               </ProtectedRoute>
             }
           />
