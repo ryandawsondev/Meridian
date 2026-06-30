@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { blockFormSchema, type BlockFormValues } from '../../schemas'
 import { Label } from '../ui/label'
@@ -31,7 +31,7 @@ export default function BlockForm({
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     formState: { errors },
   } = useForm<BlockFormValues>({
@@ -47,8 +47,8 @@ export default function BlockForm({
     },
   })
 
-  const isVariable = watch('isVariable')
-  const colour = watch('colour')
+  const isVariable = useWatch({ control, name: 'isVariable' })
+  const colour = useWatch({ control, name: 'colour' })
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
