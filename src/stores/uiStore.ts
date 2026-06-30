@@ -1,22 +1,31 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 type ViewMode = 'day' | 'week' | 'list'
-type LayoutMode = 'grid' | 'tabular'
+export type Theme = 'light' | 'dark'
 
 interface UiState {
   viewMode: ViewMode
-  layoutMode: LayoutMode
+  theme: Theme
   hasUnsavedChanges: boolean
   setViewMode: (mode: ViewMode) => void
-  setLayoutMode: (mode: LayoutMode) => void
+  setTheme: (theme: Theme) => void
   setHasUnsavedChanges: (v: boolean) => void
 }
 
-export const useUiStore = create<UiState>((set) => ({
-  viewMode: 'week',
-  layoutMode: 'grid',
-  hasUnsavedChanges: false,
-  setViewMode: (viewMode) => set({ viewMode }),
-  setLayoutMode: (layoutMode) => set({ layoutMode }),
-  setHasUnsavedChanges: (hasUnsavedChanges) => set({ hasUnsavedChanges }),
-}))
+export const useUiStore = create<UiState>()(
+  persist(
+    (set) => ({
+      viewMode: 'list' as ViewMode,
+      theme: 'light' as Theme,
+      hasUnsavedChanges: false,
+      setViewMode: (viewMode) => set({ viewMode }),
+      setTheme: (theme) => set({ theme }),
+      setHasUnsavedChanges: (hasUnsavedChanges) => set({ hasUnsavedChanges }),
+    }),
+    {
+      name: 'meridian-ui',
+      partialize: (state) => ({ viewMode: state.viewMode, theme: state.theme }),
+    }
+  )
+)

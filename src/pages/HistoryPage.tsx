@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Calendar, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
 import { usePublishedHistory, HISTORY_MONTHS_STEP } from '../hooks/usePublishedHistory'
 import { useCalendarEventsForWeek } from '../hooks/useGoogleCalendar'
 import { useAuth } from '../hooks/useAuth'
+import { getGoogleAccessToken, signIn } from '../lib/auth'
 import { formatWeekLabel, fromISO } from '../lib/date'
 import { Button } from '../components/ui/button'
 import type { DbPublishedWeek } from '../types/db'
@@ -36,7 +38,23 @@ function groupEventsByDate(events: CalendarEvent[]): { date: string; events: Cal
 // ─── WeekDetail ───────────────────────────────────────────────────────────────
 
 function WeekDetail({ weekStartISO }: { weekStartISO: string }) {
-  const { data: events, isLoading, isError } = useCalendarEventsForWeek(weekStartISO)
+  const { session } = useAuth()
+  const token = getGoogleAccessToken(session)
+  const { data: events, isLoading, isError, refetch } = useCalendarEventsForWeek(weekStartISO)
+
+  if (!token) {
+    return (
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <p className="text-sm text-muted-foreground">Google session expired.</p>
+        <button
+          onClick={() => void signIn()}
+          className="shrink-0 rounded-md border border-input bg-background px-3 py-1 text-xs font-medium transition-colors hover:bg-muted"
+        >
+          Reconnect
+        </button>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -47,7 +65,17 @@ function WeekDetail({ weekStartISO }: { weekStartISO: string }) {
   }
 
   if (isError) {
-    return <p className="px-4 py-2 text-sm text-destructive">Failed to load events.</p>
+    return (
+      <div className="flex items-center gap-2 px-4 py-3">
+        <p className="text-sm text-destructive">Failed to load events.</p>
+        <button
+          onClick={() => void refetch()}
+          className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          Try again
+        </button>
+      </div>
+    )
   }
 
   if (!events || events.length === 0) {
@@ -107,7 +135,8 @@ function WeekCard({ week }: { week: DbPublishedWeek }) {
         <div className="flex items-center gap-3">
           <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
           <div>
-            <p className="text-sm font-medium">{label}</p>
+            {/* Week range is primary */}
+            <p className="text-sm font-semibold">{label}</p>
             <p className="text-xs text-muted-foreground">
               Published{' '}
               {new Intl.DateTimeFormat('en-GB', {
@@ -124,7 +153,20 @@ function WeekCard({ week }: { week: DbPublishedWeek }) {
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         )}
       </button>
-      {expanded && <WeekDetail weekStartISO={week.week_start} />}
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <WeekDetail weekStartISO={week.week_start} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -133,9 +175,18 @@ function WeekCard({ week }: { week: DbPublishedWeek }) {
 
 const INITIAL_MONTHS = HISTORY_MONTHS_STEP
 
+const listVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+}
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.2 } },
+}
+
 export default function HistoryPage() {
   const [monthsBack, setMonthsBack] = useState(INITIAL_MONTHS)
-  const { data: weeks, isLoading, isError } = usePublishedHistory(monthsBack)
+  const { data: weeks, isLoading, isError, refetch } = usePublishedHistory(monthsBack)
   const { session } = useAuth()
 
   if (!session) {
@@ -157,21 +208,42 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {isError && <p className="text-sm text-destructive">Failed to load history.</p>}
+      {isError && (
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-destructive">Failed to load history.</p>
+          <button
+            onClick={() => void refetch()}
+            className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            Try again
+          </button>
+        </div>
+      )}
 
       {!isLoading && !isError && weeks && weeks.length === 0 && (
-        <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-input">
-          <p className="text-sm text-muted-foreground">No published weeks yet</p>
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-input px-6 py-16 text-center">
+          <p className="text-sm font-medium">No published weeks yet</p>
+          <p className="text-xs text-muted-foreground">
+            Plan and publish your first week to see it here.
+          </p>
         </div>
       )}
 
       {weeks && weeks.length > 0 && (
         <>
-          <div className="flex flex-col gap-3">
+          <motion.div
+            className="flex flex-col gap-3"
+            variants={listVariants}
+            initial="hidden"
+            animate="show"
+          >
             {weeks.map((week) => (
-              <WeekCard key={week.id} week={week} />
+              <motion.div key={week.id} variants={itemVariants}>
+                <WeekCard week={week} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
+
           <div className="mt-6 flex justify-center">
             <Button
               variant="outline"

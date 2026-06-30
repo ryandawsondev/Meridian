@@ -1,10 +1,18 @@
 import { useState } from 'react'
+import { Check } from 'lucide-react'
 import type { DayPreset, WeekPreset } from '../../types'
 import { useUpdateWeekPreset, useSetWeekPresetDay } from '../../hooks/usePresets'
 import { useUiStore } from '../../stores/uiStore'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select'
 import {
   Dialog,
   DialogContent,
@@ -33,6 +41,7 @@ interface WeekPresetEditorProps {
   onClose: () => void
 }
 
+
 export default function WeekPresetEditor({
   preset,
   dayPresets,
@@ -40,39 +49,52 @@ export default function WeekPresetEditor({
   onClose,
 }: WeekPresetEditorProps) {
   const [name, setName] = useState(preset.name)
+  const [nameSaved, setNameSaved] = useState(false)
   const [closeAlertOpen, setCloseAlertOpen] = useState(false)
+  const [emptyAlertOpen, setEmptyAlertOpen] = useState(false)
 
   const setHasUnsavedChanges = useUiStore((s) => s.setHasUnsavedChanges)
   const updatePreset = useUpdateWeekPreset()
   const setDay = useSetWeekPresetDay()
 
   const hasNameChanged = name !== preset.name
+  const hasNoDaysAssigned = Object.values(preset.days).filter(Boolean).length === 0
 
   function handleNameChange(v: string) {
     setName(v)
+    setNameSaved(false)
     setHasUnsavedChanges(v !== preset.name)
   }
 
   async function handleSaveName() {
     await updatePreset.mutateAsync({ id: preset.id, name })
     setHasUnsavedChanges(false)
+    setNameSaved(true)
+    setTimeout(() => setNameSaved(false), 2000)
   }
 
-  async function handleDayChange(dayOfWeek: Day, dayPresetId: string) {
+  async function handleDayChange(dayOfWeek: Day, value: string) {
     await setDay.mutateAsync({
       weekPresetId: preset.id,
       dayOfWeek,
-      dayPresetId: dayPresetId || null,
+      dayPresetId: value === '__none__' ? null : value,
     })
   }
 
   function handleClose() {
     if (hasNameChanged) {
       setCloseAlertOpen(true)
+    } else if (hasNoDaysAssigned) {
+      setEmptyAlertOpen(true)
     } else {
       setHasUnsavedChanges(false)
       onClose()
     }
+  }
+
+  function forceClose() {
+    setHasUnsavedChanges(false)
+    onClose()
   }
 
   return (
@@ -86,7 +108,7 @@ export default function WeekPresetEditor({
           {/* Name */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="week-preset-name">Name</Label>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <Input
                 id="week-preset-name"
                 value={name}
@@ -102,6 +124,12 @@ export default function WeekPresetEditor({
                   Save
                 </Button>
               )}
+              {nameSaved && !hasNameChanged && (
+                <span className="flex shrink-0 items-center gap-1 text-xs text-green-600">
+                  <Check className="h-3.5 w-3.5" />
+                  Saved
+                </span>
+              )}
             </div>
           </div>
 
@@ -113,19 +141,22 @@ export default function WeekPresetEditor({
                 <span className="w-24 shrink-0 text-sm capitalize text-muted-foreground">
                   {day}
                 </span>
-                <select
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                  value={preset.days[day] ?? ''}
-                  onChange={(e) => handleDayChange(day, e.target.value)}
-                  aria-label={`${day} day preset`}
+                <Select
+                  value={preset.days[day] ?? '__none__'}
+                  onValueChange={(v) => handleDayChange(day, v)}
                 >
-                  <option value="">— None —</option>
-                  {dayPresets.map((dp) => (
-                    <option key={dp.id} value={dp.id}>
-                      {dp.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger aria-label={`${day} day preset`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— None —</SelectItem>
+                    {dayPresets.map((dp) => (
+                      <SelectItem key={dp.id} value={dp.id}>
+                        {dp.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             ))}
           </div>
@@ -138,6 +169,7 @@ export default function WeekPresetEditor({
         </DialogContent>
       </Dialog>
 
+      {/* Unsaved name changes alert */}
       <AlertDialog open={closeAlertOpen} onOpenChange={setCloseAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -148,14 +180,23 @@ export default function WeekPresetEditor({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Stay</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setHasUnsavedChanges(false)
-                onClose()
-              }}
-            >
-              Close without saving
-            </AlertDialogAction>
+            <AlertDialogAction onClick={forceClose}>Close without saving</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* No days assigned warning */}
+      <AlertDialog open={emptyAlertOpen} onOpenChange={setEmptyAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>No days assigned</AlertDialogTitle>
+            <AlertDialogDescription>
+              This week preset has no day presets assigned. It will appear in planning but produce an empty week.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={forceClose}>Close anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

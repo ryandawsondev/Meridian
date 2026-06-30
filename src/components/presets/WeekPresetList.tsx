@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Pencil, Trash2, Plus, CalendarDays } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
 import {
   useWeekPresets,
   useCreateWeekPreset,
@@ -39,7 +40,7 @@ const DAY_INITIALS: Record<string, string> = {
 }
 
 export default function WeekPresetList() {
-  const { data: presets = [], isLoading, error } = useWeekPresets()
+  const { data: presets = [], isLoading, error, refetch } = useWeekPresets()
   const { data: dayPresets = [] } = useDayPresets()
   const createPreset = useCreateWeekPreset()
   const deletePreset = useDeleteWeekPreset()
@@ -51,9 +52,10 @@ export default function WeekPresetList() {
 
   async function handleCreate() {
     if (!newName.trim()) return
-    await createPreset.mutateAsync(newName.trim())
+    const created = await createPreset.mutateAsync(newName.trim())
     setNewName('')
     setCreateOpen(false)
+    setEditingPreset(created)
   }
 
   async function handleDelete() {
@@ -63,14 +65,26 @@ export default function WeekPresetList() {
   }
 
   if (isLoading) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
+    return (
+      <div className="flex flex-col gap-2 py-4">
+        {[1, 2, 3].map((n) => (
+          <div key={n} className="h-20 animate-pulse rounded-lg bg-muted" />
+        ))}
+      </div>
+    )
   }
 
   if (error) {
     return (
-      <p className="py-8 text-center text-sm text-destructive">
-        Failed to load presets. Reload the page.
-      </p>
+      <div className="flex items-center gap-2 py-8">
+        <p className="text-sm text-destructive">Failed to load presets.</p>
+        <button
+          onClick={() => void refetch()}
+          className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          Try again
+        </button>
+      </div>
     )
   }
 
@@ -98,59 +112,62 @@ export default function WeekPresetList() {
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        {presets.map((preset) => {
-          const filledDays = Object.keys(preset.days).length
-          return (
-            <div
-              key={preset.id}
-              className="flex items-center gap-3 rounded-lg border border-input bg-card px-4 py-3"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="truncate font-medium">{preset.name}</p>
-                <div className="mt-1 flex gap-1">
-                  {Object.entries(DAY_INITIALS).map(([day, initial]) => (
-                    <div
-                      key={day}
-                      className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-medium ${
-                        preset.days[day as keyof typeof preset.days]
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                      title={day}
-                    >
-                      {initial}
-                    </div>
-                  ))}
+      <motion.div className="flex flex-col gap-2">
+        <AnimatePresence>
+          {presets.map((preset) => {
+            const filledDays = Object.keys(preset.days).length
+            return (
+              <motion.div
+                key={preset.id}
+                layout
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-3 rounded-lg border border-input bg-card px-4 py-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{preset.name}</p>
+                  <div className="mt-1 flex gap-1">
+                    {Object.entries(DAY_INITIALS).map(([day, initial]) => (
+                      <div
+                        key={day}
+                        className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-medium ${
+                          preset.days[day as keyof typeof preset.days]
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                        title={day}
+                      >
+                        {initial}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {filledDays} of 7 days assigned
+                  </p>
                 </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {filledDays} of 7 days assigned
-                </p>
-              </div>
-              <div className="flex shrink-0 gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setEditingPreset(preset)}
-                  aria-label="Edit preset"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive"
-                  onClick={() => setDeletingId(preset.id)}
-                  aria-label="Delete preset"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+                <div className="flex shrink-0 gap-0.5">
+                  <button
+                    className="-m-1 flex h-10 w-10 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setEditingPreset(preset)}
+                    aria-label="Edit preset"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    className="-m-1 flex h-10 w-10 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setDeletingId(preset.id)}
+                    aria-label="Delete preset"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </motion.div>
+            )
+          })}
+        </AnimatePresence>
+      </motion.div>
 
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

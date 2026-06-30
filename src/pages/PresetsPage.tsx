@@ -5,7 +5,10 @@ import WeekPresetList from '../components/presets/WeekPresetList'
 export default function PresetsPage() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Presets</h1>
+      <h1 className="mb-1 text-2xl font-semibold tracking-tight">Presets</h1>
+      <p className="mb-6 text-xs text-muted-foreground">
+        Build day templates first, then compose them into week schedules.
+      </p>
       <Tabs defaultValue="day">
         <TabsList className="mb-4 w-full">
           <TabsTrigger value="day" className="flex-1">

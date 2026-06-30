@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
 import type { Block, FilledBlock } from '../../types'
 import { usePlanningStore } from '../../stores/planningStore'
 import { Label } from '../ui/label'
@@ -25,12 +26,16 @@ export default function VariableBlockForm({ block, dayDate, error }: VariableBlo
 
   const [title, setTitle] = useState(existing?.title ?? '')
   const [notes, setNotes] = useState(existing?.notes ?? '')
+  const [titleTouched, setTitleTouched] = useState(false)
   const [showSubTasks, setShowSubTasks] = useState(
     existing?.subTasks != null && existing.subTasks.length > 0
   )
   const [subTasks, setSubTasks] = useState<SubTask[]>(
     existing?.subTasks?.map((s) => ({ title: s.title, notes: s.notes ?? '' })) ?? []
   )
+
+  const showTitleError = (error || titleTouched) && !title.trim()
+  const isFilled = title.trim().length > 0
 
   function sync(
     nextTitle: string,
@@ -92,14 +97,21 @@ export default function VariableBlockForm({ block, dayDate, error }: VariableBlo
 
   return (
     <div
-      className={`flex flex-col gap-3 rounded-lg border px-4 py-4 ${
-        error && !title.trim() ? 'border-destructive' : 'border-input'
+      className={`flex flex-col gap-3 rounded-lg border px-4 py-4 transition-colors ${
+        showTitleError
+          ? 'border-destructive'
+          : isFilled
+          ? 'border-input'
+          : 'border-dashed border-input'
       }`}
     >
       {/* Block meta */}
       <div className="flex items-center gap-2">
-        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: block.colour }} />
-        <span className="text-xs text-muted-foreground">
+        <div
+          className="h-3 w-3 shrink-0 rounded-full"
+          style={{ backgroundColor: block.colour }}
+        />
+        <span className="text-sm font-medium text-foreground">
           {block.startTime}–{block.endTime}
         </span>
         {block.notes && (
@@ -117,11 +129,22 @@ export default function VariableBlockForm({ block, dayDate, error }: VariableBlo
           placeholder={`e.g. ${block.title}`}
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
-          className={error && !title.trim() ? 'border-destructive' : ''}
+          onBlur={() => setTitleTouched(true)}
+          className={showTitleError ? 'border-destructive' : ''}
         />
-        {error && !title.trim() && (
-          <p className="text-xs text-destructive">Required</p>
-        )}
+        <AnimatePresence>
+          {showTitleError && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="text-xs text-destructive"
+            >
+              Required
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Notes */}
@@ -140,58 +163,71 @@ export default function VariableBlockForm({ block, dayDate, error }: VariableBlo
       <button
         type="button"
         onClick={toggleSubTasks}
-        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+        className="flex w-fit items-center gap-1.5 rounded-md border border-dashed border-input px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-input hover:bg-muted hover:text-foreground"
       >
-        {showSubTasks ? (
-          <ChevronUp className="h-3.5 w-3.5" />
-        ) : (
-          <ChevronDown className="h-3.5 w-3.5" />
-        )}
+        <Plus className={`h-3.5 w-3.5 transition-transform ${showSubTasks ? 'rotate-45' : ''}`} />
         {showSubTasks ? 'Hide sub-tasks' : 'Add sub-tasks'}
       </button>
 
       {/* Sub-tasks */}
-      {showSubTasks && (
-        <div className="flex flex-col gap-2 pl-2 border-l-2 border-border">
-          {subTasks.map((task, i) => (
-            <div key={i} className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder={`Sub-task ${i + 1}`}
-                  value={task.title}
-                  onChange={(e) => handleSubTaskChange(i, 'title', e.target.value)}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 shrink-0"
-                  onClick={() => removeSubTask(i)}
-                  aria-label="Remove sub-task"
-                >
-                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                </Button>
-              </div>
-              <Input
-                placeholder="Notes (optional)"
-                value={task.notes}
-                onChange={(e) => handleSubTaskChange(i, 'notes', e.target.value)}
-              />
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addSubTask}
-            className="w-fit"
+      <AnimatePresence>
+        {showSubTasks && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
           >
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Add sub-task
-          </Button>
-        </div>
-      )}
+            <div className="flex flex-col gap-2 border-l-2 border-border pl-3 pt-1">
+              <AnimatePresence>
+                {subTasks.map((task, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex flex-col gap-1.5 overflow-hidden"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder={`Sub-task ${i + 1}`}
+                        value={task.title}
+                        onChange={(e) => handleSubTaskChange(i, 'title', e.target.value)}
+                        className="flex-1"
+                      />
+                      <button
+                        type="button"
+                        className="-m-1 flex h-9 w-9 items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        onClick={() => removeSubTask(i)}
+                        aria-label="Remove sub-task"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <Input
+                      placeholder="Notes (optional)"
+                      value={task.notes}
+                      onChange={(e) => handleSubTaskChange(i, 'notes', e.target.value)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSubTask}
+                className="w-fit"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add sub-task
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

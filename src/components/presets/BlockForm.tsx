@@ -7,6 +7,12 @@ import { Textarea } from '../ui/textarea'
 import { Switch } from '../ui/switch'
 import { Button } from '../ui/button'
 
+const COLOUR_SWATCHES = [
+  '#6366f1', '#8b5cf6', '#ec4899', '#ef4444',
+  '#f97316', '#eab308', '#22c55e', '#14b8a6',
+  '#06b6d4', '#3b82f6', '#64748b', '#78716c',
+]
+
 interface BlockFormProps {
   defaultValues?: Partial<BlockFormValues>
   onSubmit: (values: BlockFormValues) => void
@@ -74,16 +80,35 @@ export default function BlockForm({
         </p>
       )}
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Label htmlFor="block-colour">Colour</Label>
-        <div className="flex items-center gap-3">
-          <input
+        {/* Swatch grid */}
+        <div className="grid grid-cols-6 gap-2">
+          {COLOUR_SWATCHES.map((hex) => (
+            <button
+              key={hex}
+              type="button"
+              onClick={() => setValue('colour', hex)}
+              aria-label={hex}
+              className={`h-8 w-8 rounded-lg transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                colour === hex ? 'ring-2 ring-ring ring-offset-2 scale-110' : ''
+              }`}
+              style={{ backgroundColor: hex }}
+            />
+          ))}
+        </div>
+        {/* Custom hex input */}
+        <div className="flex items-center gap-2">
+          <div
+            className="h-6 w-6 shrink-0 rounded"
+            style={{ backgroundColor: colour }}
+          />
+          <Input
             id="block-colour"
-            type="color"
-            className="h-10 w-14 cursor-pointer rounded-md border border-input p-1"
+            className="font-mono text-xs"
+            placeholder="#6366f1"
             {...register('colour')}
           />
-          <span className="font-mono text-sm text-muted-foreground">{colour}</span>
         </div>
       </div>
 

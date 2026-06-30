@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { AlertTriangle } from 'lucide-react'
 import { usePlanningStore } from '../../stores/planningStore'
 import { useWeekPresets, useDayPresets } from '../../hooks/usePresets'
 import { useWeekRange } from '../../hooks/useWeekRange'
@@ -25,6 +26,14 @@ export default function StepReview() {
 
   const hasAnyBlocks = days.some((d) => d.blocks.length > 0)
 
+  const unfilledCount = days.reduce((acc, { blocks, dateISO }) => {
+    return acc + blocks.filter((b) => {
+      if (!b.isVariable) return false
+      const filled = filledBlocks[`${dateISO}_${b.id}`]
+      return !filled || !filled.title.trim()
+    }).length
+  }, 0)
+
   function getDisplayTitle(block: Block, dateISO: string): string {
     if (!block.isVariable) return block.title
     const filled = filledBlocks[`${dateISO}_${block.id}`]
@@ -47,6 +56,16 @@ export default function StepReview() {
           <p className="text-xs text-muted-foreground">{weekPreset.name}</p>
         )}
       </div>
+
+      {/* Unfilled variable blocks warning */}
+      {unfilledCount > 0 && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            {unfilledCount} block{unfilledCount !== 1 ? 's' : ''} still need{unfilledCount === 1 ? 's' : ''} a title — go back to fill them in, or they'll publish with placeholder text.
+          </p>
+        </div>
+      )}
 
       {/* Empty state */}
       {!hasAnyBlocks && (
