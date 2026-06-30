@@ -39,9 +39,12 @@ export interface PublishResult {
 async function runPublish(input: PublishInput): Promise<PublishResult> {
   const { days, weekStartISO, weekPresetId, token, timeZone } = input
 
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
   const { data: week, error: weekError } = await supabase
     .from('published_weeks')
-    .insert({ week_start: weekStartISO, week_preset_id: weekPresetId ?? null })
+    .insert({ user_id: user.id, week_start: weekStartISO, week_preset_id: weekPresetId ?? null })
     .select('id')
     .single()
 

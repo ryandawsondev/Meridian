@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { usePlanningStore } from '../../stores/planningStore'
 import { useWeekPresets, useDayPresets } from '../../hooks/usePresets'
 import { useWeekRange } from '../../hooks/useWeekRange'
-import { getDayName, formatDayLabel } from '../../lib/date'
+import { getDayName, formatDayLabel, toISO } from '../../lib/date'
 import type { Block } from '../../types'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
@@ -20,20 +20,20 @@ export default function StepReview() {
     const dayName = getDayName(date)
     const dayPresetId = weekPreset?.days[dayName]
     const dayPreset = dayPresets.find((dp) => dp.id === dayPresetId)
-    return { label: formatDayLabel(date), blocks: dayPreset?.blocks ?? [] }
+    return { label: formatDayLabel(date), dateISO: toISO(date), blocks: dayPreset?.blocks ?? [] }
   })
 
   const hasAnyBlocks = days.some((d) => d.blocks.length > 0)
 
-  function getDisplayTitle(block: Block): string {
+  function getDisplayTitle(block: Block, dateISO: string): string {
     if (!block.isVariable) return block.title
-    const filled = filledBlocks[block.id]
+    const filled = filledBlocks[`${dateISO}_${block.id}`]
     return filled?.title || `(${block.title})`
   }
 
-  function getSubTaskCount(block: Block): number {
+  function getSubTaskCount(block: Block, dateISO: string): number {
     if (!block.isVariable) return 0
-    return filledBlocks[block.id]?.subTasks?.length ?? 0
+    return filledBlocks[`${dateISO}_${block.id}`]?.subTasks?.length ?? 0
   }
 
   return (
@@ -59,7 +59,7 @@ export default function StepReview() {
       )}
 
       {/* Day list */}
-      {days.map(({ label, blocks }) => {
+      {days.map(({ label, dateISO, blocks }) => {
         if (blocks.length === 0) return null
         return (
           <div key={label}>
@@ -68,7 +68,7 @@ export default function StepReview() {
             </p>
             <div className="flex flex-col gap-1.5">
               {blocks.map((block) => {
-                const subCount = getSubTaskCount(block)
+                const subCount = getSubTaskCount(block, dateISO)
                 return (
                   <div
                     key={block.id}
@@ -79,8 +79,8 @@ export default function StepReview() {
                       style={{ backgroundColor: block.colour }}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className={`truncate text-sm font-medium ${block.isVariable && !filledBlocks[block.id]?.title ? 'text-muted-foreground' : ''}`}>
-                        {getDisplayTitle(block)}
+                      <p className={`truncate text-sm font-medium ${block.isVariable && !filledBlocks[`${dateISO}_${block.id}`]?.title ? 'text-muted-foreground' : ''}`}>
+                        {getDisplayTitle(block, dateISO)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {block.startTime}–{block.endTime}

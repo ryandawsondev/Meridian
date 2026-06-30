@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { usePlanningStore } from '../stores/planningStore'
 import StepPresetPicker from '../components/planning/StepPresetPicker'
 import StepWeekPicker from '../components/planning/StepWeekPicker'
@@ -39,9 +40,14 @@ function StepIndicator({ current }: { current: number }) {
 
 export default function PlanningPage() {
   const { step, clearSession } = usePlanningStore()
+  const topRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [step])
 
   return (
-    <div className="mx-auto w-full max-w-lg px-4 py-6">
+    <div ref={topRef} className="mx-auto w-full max-w-lg px-4 py-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>

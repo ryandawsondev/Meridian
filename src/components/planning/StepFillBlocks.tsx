@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { usePlanningStore } from '../../stores/planningStore'
 import { useWeekPresets, useDayPresets } from '../../hooks/usePresets'
 import { useWeekRange } from '../../hooks/useWeekRange'
-import { getDayName, formatDayLabel } from '../../lib/date'
+import { getDayName, formatDayLabel, toISO } from '../../lib/date'
 import type { Block } from '../../types'
 import { Button } from '../ui/button'
 import VariableBlockForm from './VariableBlockForm'
 
 type DaySchedule = {
   dayLabel: string
+  dateISO: string
   variableBlocks: Block[]
 }
 
@@ -27,15 +28,17 @@ export default function StepFillBlocks() {
     const dayPresetId = weekPreset?.days[dayName]
     const dayPreset = dayPresets.find((dp) => dp.id === dayPresetId)
     const variableBlocks = dayPreset?.blocks.filter((b) => b.isVariable) ?? []
-    return { dayLabel: formatDayLabel(date), variableBlocks }
+    return { dayLabel: formatDayLabel(date), dateISO: toISO(date), variableBlocks }
   })
 
-  const allVariableBlocks = daySchedules.flatMap((d) => d.variableBlocks)
+  const allVariableBlocks = daySchedules.flatMap((d) =>
+    d.variableBlocks.map((b) => ({ block: b, dateISO: d.dateISO }))
+  )
   const hasVariableBlocks = allVariableBlocks.length > 0
 
   function validate() {
-    return allVariableBlocks.every((b) => {
-      const filled = filledBlocks[b.id]
+    return allVariableBlocks.every(({ block, dateISO }) => {
+      const filled = filledBlocks[`${dateISO}_${block.id}`]
       return filled && filled.title.trim().length > 0
     })
   }
@@ -76,13 +79,13 @@ export default function StepFillBlocks() {
         Fill in what you're doing for each variable block.
       </p>
 
-      {daySchedules.map(({ dayLabel, variableBlocks }) => {
+      {daySchedules.map(({ dayLabel, dateISO, variableBlocks }) => {
         if (variableBlocks.length === 0) return null
         return (
           <div key={dayLabel} className="flex flex-col gap-3">
             <h3 className="text-sm font-semibold text-muted-foreground">{dayLabel}</h3>
             {variableBlocks.map((block) => (
-              <VariableBlockForm key={block.id} block={block} error={showErrors} />
+              <VariableBlockForm key={`${dateISO}_${block.id}`} block={block} dayDate={dateISO} error={showErrors} />
             ))}
           </div>
         )
