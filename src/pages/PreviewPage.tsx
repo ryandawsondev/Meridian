@@ -54,6 +54,7 @@ export default function PreviewPage() {
       weekPresetId,
       token,
       timeZone,
+      userId: session?.user?.id ?? '',
     })
     setPublishResult(result)
   }

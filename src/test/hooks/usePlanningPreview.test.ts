@@ -79,7 +79,7 @@ describe('usePlanningPreview', () => {
   it('uses filled block title for variable blocks', () => {
     usePlanningStore.getState().setWeekPresetId('wp-1')
     usePlanningStore.getState().setTargetWeekStart('2024-06-24')
-    usePlanningStore.getState().setFilledBlock('b-2', {
+    usePlanningStore.getState().setFilledBlock('2024-06-24_b-2', {
       blockId: 'b-2',
       title: 'Ukrainian study',
       notes: 'Vocab chapter 3',

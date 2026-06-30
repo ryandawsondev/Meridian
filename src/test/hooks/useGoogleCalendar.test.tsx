@@ -92,6 +92,7 @@ describe('usePublishWeek', () => {
         weekPresetId: null,
         token: 'test-token',
         timeZone: 'UTC',
+        userId: 'u1',
       })
     })
 
