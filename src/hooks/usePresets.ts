@@ -27,9 +27,11 @@ export function useCreateDayPreset() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (name: string): Promise<DayPreset> => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
       const { data, error } = await supabase
         .from('day_presets')
-        .insert({ name })
+        .insert({ name, user_id: user.id })
         .select()
         .single()
       if (error) throw new Error(error.message)
@@ -81,9 +83,11 @@ export function useCreateWeekPreset() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (name: string): Promise<WeekPreset> => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
       const { data, error } = await supabase
         .from('week_presets')
-        .insert({ name })
+        .insert({ name, user_id: user.id })
         .select()
         .single()
       if (error) throw new Error(error.message)
