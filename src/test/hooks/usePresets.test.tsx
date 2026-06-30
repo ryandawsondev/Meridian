@@ -31,7 +31,12 @@ const mockChain = {
 })
 
 vi.mock('../../lib/supabase', () => ({
-  supabase: { from: vi.fn(() => mockChain) },
+  supabase: {
+    from: vi.fn(() => mockChain),
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null }),
+    },
+  },
 }))
 
 // ─── Test wrapper ─────────────────────────────────────────────────────────────

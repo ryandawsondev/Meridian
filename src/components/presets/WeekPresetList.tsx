@@ -200,15 +200,18 @@ export default function WeekPresetList() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Editor */}
-      {editingPreset && (
-        <WeekPresetEditor
-          preset={editingPreset}
-          dayPresets={dayPresets}
-          open={!!editingPreset}
-          onClose={() => setEditingPreset(null)}
-        />
-      )}
+      {/* Editor — resolve against live query data so mutations reflect immediately */}
+      {editingPreset && (() => {
+        const livePreset = presets.find((p) => p.id === editingPreset.id) ?? editingPreset
+        return (
+          <WeekPresetEditor
+            preset={livePreset}
+            dayPresets={dayPresets}
+            open
+            onClose={() => setEditingPreset(null)}
+          />
+        )
+      })()}
     </div>
   )
 }

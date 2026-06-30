@@ -187,14 +187,17 @@ export default function DayPresetList() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Editor */}
-      {editingPreset && (
-        <DayPresetEditor
-          preset={editingPreset}
-          open={!!editingPreset}
-          onClose={() => setEditingPreset(null)}
-        />
-      )}
+      {/* Editor — resolve against live query data so mutations reflect immediately */}
+      {editingPreset && (() => {
+        const livePreset = presets.find((p) => p.id === editingPreset.id) ?? editingPreset
+        return (
+          <DayPresetEditor
+            preset={livePreset}
+            open
+            onClose={() => setEditingPreset(null)}
+          />
+        )
+      })()}
     </div>
   )
 }

@@ -14,12 +14,14 @@ interface SubTask {
 
 interface VariableBlockFormProps {
   block: Block
+  dayDate: string
   error?: boolean
 }
 
-export default function VariableBlockForm({ block, error }: VariableBlockFormProps) {
+export default function VariableBlockForm({ block, dayDate, error }: VariableBlockFormProps) {
   const { filledBlocks, setFilledBlock } = usePlanningStore()
-  const existing = filledBlocks[block.id]
+  const fillKey = `${dayDate}_${block.id}`
+  const existing = filledBlocks[fillKey]
 
   const [title, setTitle] = useState(existing?.title ?? '')
   const [notes, setNotes] = useState(existing?.notes ?? '')
@@ -45,7 +47,7 @@ export default function VariableBlockForm({ block, error }: VariableBlockFormPro
           ? nextSubTasks.map((s) => ({ title: s.title, notes: s.notes || undefined }))
           : undefined,
     }
-    setFilledBlock(block.id, filled)
+    setFilledBlock(fillKey, filled)
   }
 
   function handleTitleChange(v: string) {

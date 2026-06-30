@@ -42,8 +42,9 @@ export function usePlanningPreview(): PreviewDay[] | null {
       const dayPresetId = weekPreset?.days[dayName]
       const dayPreset = dayPresets.find((dp) => dp.id === dayPresetId)
 
+      const dateISO = toISO(date)
       const blocks: PreviewBlock[] = (dayPreset?.blocks ?? []).map((block) => {
-        const filled = filledBlocks[block.id]
+        const filled = filledBlocks[`${dateISO}_${block.id}`]
         return {
           blockId: block.id,
           originalTitle: block.title,
@@ -60,7 +61,7 @@ export function usePlanningPreview(): PreviewDay[] | null {
       return {
         dayName,
         date,
-        dateISO: toISO(date),
+        dateISO,
         label: formatDayLabel(date),
         shortLabel: formatDayShort(date),
         blocks,

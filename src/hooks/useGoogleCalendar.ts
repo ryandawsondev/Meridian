@@ -22,6 +22,7 @@ export interface PublishInput {
   weekPresetId: string | null | undefined
   token: string
   timeZone: string
+  userId: string
 }
 
 export interface PublishFailure {
@@ -37,11 +38,11 @@ export interface PublishResult {
 }
 
 async function runPublish(input: PublishInput): Promise<PublishResult> {
-  const { days, weekStartISO, weekPresetId, token, timeZone } = input
+  const { days, weekStartISO, weekPresetId, token, timeZone, userId } = input
 
   const { data: week, error: weekError } = await supabase
     .from('published_weeks')
-    .insert({ week_start: weekStartISO, week_preset_id: weekPresetId ?? null })
+    .insert({ user_id: userId, week_start: weekStartISO, week_preset_id: weekPresetId ?? null })
     .select('id')
     .single()
 
