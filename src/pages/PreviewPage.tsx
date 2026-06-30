@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, List, LayoutGrid, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { Calendar, List, LayoutGrid, CheckCircle2, AlertCircle, Loader2, Info } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
 import { usePlanningPreview } from '../hooks/usePlanningPreview'
 import { useUiStore } from '../stores/uiStore'
 import { usePlanningStore } from '../stores/planningStore'
@@ -42,7 +43,7 @@ const VIEW_OPTIONS = [
 export default function PreviewPage() {
   const navigate = useNavigate()
   const { viewMode, setViewMode } = useUiStore()
-  const { targetWeekStart, weekPresetId, clearSession } = usePlanningStore()
+  const { targetWeekStart, weekPresetId, filledBlocks, clearSession } = usePlanningStore()
   const { session } = useAuth()
   const planDays = usePlanningPreview()
   const weekRange = useWeekRange(targetWeekStart)
@@ -87,27 +88,48 @@ export default function PreviewPage() {
   const token = getGoogleAccessToken(session)
   const totalEvents = planDays.reduce((acc, d) => acc + d.blocks.length, 0)
 
+  // Count unfilled variable blocks (moved from StepReview since that step is removed)
+  const unfilledCount = planDays.reduce((acc, day) => {
+    return acc + day.blocks.filter((b) => {
+      if (!b.isVariable) return false
+      const key = `${day.dateISO}_${b.blockId}`
+      const filled = filledBlocks[key]
+      return !filled || !filled.title.trim()
+    }).length
+  }, 0)
+
   return (
     <div className="relative">
-      {/* Token expiry — sticky top banner */}
+      {/* Token expiry — sticky top banner (amber = hard blocker) */}
       {!token && session && (
         <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950">
           <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-          <p className="text-sm text-amber-700 dark:text-amber-300">
+          <p className="flex-1 text-sm text-amber-700 dark:text-amber-300">
             Google session expired — sign out and sign back in to publish.
           </p>
         </div>
       )}
 
       {/* Loading overlay during publish */}
-      {publishWeek.isPending && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Publishing to Google Calendar…</p>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {publishWeek.isPending && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center gap-3"
+            >
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Publishing to Google Calendar…</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="mx-auto w-full max-w-2xl px-4 py-6">
         {/* Header */}
@@ -122,7 +144,7 @@ export default function PreviewPage() {
                 key={value}
                 onClick={() => setViewMode(value)}
                 aria-label={label}
-                className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                className={`relative flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
                   viewMode === value
                     ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -135,11 +157,31 @@ export default function PreviewPage() {
           </div>
         </div>
 
+        {/* Unfilled blocks info banner (blue = informational, not blocking) */}
+        {unfilledCount > 0 && (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-950">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              {unfilledCount} variable block{unfilledCount !== 1 ? 's' : ''} will publish with placeholder text.
+            </p>
+          </div>
+        )}
+
         {/* View */}
         <div className="mb-6">
-          {viewMode === 'day' && <DayView days={planDays} onEditBlock={handleEditBlock} />}
-          {viewMode === 'week' && <WeekView days={planDays} onEditBlock={handleEditBlock} />}
-          {viewMode === 'list' && <ListView days={planDays} onEditBlock={handleEditBlock} />}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={viewMode}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              {viewMode === 'day' && <DayView days={planDays} onEditBlock={handleEditBlock} />}
+              {viewMode === 'week' && <WeekView days={planDays} onEditBlock={handleEditBlock} />}
+              {viewMode === 'list' && <ListView days={planDays} onEditBlock={handleEditBlock} />}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Publish error */}
@@ -154,10 +196,7 @@ export default function PreviewPage() {
 
         {/* Footer */}
         <div className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/planning')}
-          >
+          <Button variant="outline" onClick={() => navigate('/planning')}>
             Back
           </Button>
           <Button
@@ -189,9 +228,7 @@ export default function PreviewPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePublishConfirmed}>
-              Publish
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handlePublishConfirmed}>Publish</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -206,8 +243,14 @@ export default function PreviewPage() {
               </DialogTitle>
             </DialogHeader>
             <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <div className="flex items-center gap-3">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 18, delay: 0.1 }}
+                >
+                  <CheckCircle2 className="h-6 w-6 text-green-600" />
+                </motion.div>
                 <p className="text-sm">
                   {publishResult.successCount} event
                   {publishResult.successCount !== 1 ? 's' : ''} added to Google Calendar

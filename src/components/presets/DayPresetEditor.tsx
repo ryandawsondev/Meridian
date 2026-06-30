@@ -205,46 +205,38 @@ export default function DayPresetEditor({ preset, open, onClose }: DayPresetEdit
                     {block.startTime} – {block.endTime}
                   </span>
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <button
+                    className="-m-1 flex h-9 w-9 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => handleMoveBlock(i, 'up')}
                     disabled={i === 0}
                     aria-label="Move up"
                   >
                     <ChevronUp className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
+                  </button>
+                  <button
+                    className="-m-1 flex h-9 w-9 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => handleMoveBlock(i, 'down')}
                     disabled={i === preset.blocks.length - 1}
                     aria-label="Move down"
                   >
                     <ChevronDown className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
+                  </button>
+                  <button
+                    className="-m-1 flex h-9 w-9 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => openEditBlock(block)}
                     aria-label="Edit block"
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-destructive hover:text-destructive"
+                  </button>
+                  <button
+                    className="-m-1 flex h-9 w-9 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => handleDeleteBlock(block.id)}
                     disabled={deleteBlock.isPending}
                     aria-label="Delete block"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  </button>
                 </div>
               </div>
             ))}

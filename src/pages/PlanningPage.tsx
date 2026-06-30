@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { usePlanningStore } from '../stores/planningStore'
 import type { PlanningStep } from '../stores/planningStore'
 import StepPresetPicker from '../components/planning/StepPresetPicker'
 import StepWeekPicker from '../components/planning/StepWeekPicker'
 import StepFillBlocks from '../components/planning/StepFillBlocks'
-import StepReview from '../components/planning/StepReview'
 import { Button } from '../components/ui/button'
 import {
   AlertDialog,
@@ -21,7 +21,12 @@ const STEP_LABELS: Record<number, string> = {
   1: 'Choose preset',
   2: 'Choose week',
   3: 'Fill blocks',
-  4: 'Review',
+}
+
+const STEP_VARIANTS = {
+  enter: (dir: number) => ({ opacity: 0, x: dir > 0 ? 24 : -24 }),
+  center: { opacity: 1, x: 0 },
+  exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -24 : 24 }),
 }
 
 function StepIndicator({
@@ -33,7 +38,7 @@ function StepIndicator({
 }) {
   return (
     <div className="flex items-center gap-1">
-      {[1, 2, 3, 4].map((n) => (
+      {[1, 2, 3].map((n) => (
         <div key={n} className="flex items-center gap-1">
           <button
             onClick={() => n < current && onJump(n as PlanningStep)}
@@ -50,8 +55,12 @@ function StepIndicator({
           >
             {n}
           </button>
-          {n < 4 && (
-            <div className={`h-px w-6 ${n < current ? 'bg-primary' : 'bg-border'}`} />
+          {n < 3 && (
+            <motion.div
+              className="h-px w-6"
+              animate={{ backgroundColor: n < current ? 'hsl(var(--primary))' : 'hsl(var(--border))' }}
+              transition={{ duration: 0.3 }}
+            />
           )}
         </div>
       ))}
@@ -63,10 +72,13 @@ export default function PlanningPage() {
   const { step, clearSession, setStep } = usePlanningStore()
   const topRef = useRef<HTMLDivElement>(null)
   const [startOverOpen, setStartOverOpen] = useState(false)
+  const [direction, setDirection] = useState(1)
 
-  useEffect(() => {
+  function handleStepJump(newStep: PlanningStep) {
+    setDirection(newStep > step ? 1 : -1)
+    setStep(newStep)
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [step])
+  }
 
   function handleStartOver() {
     clearSession()
@@ -93,14 +105,25 @@ export default function PlanningPage() {
 
       {/* Step indicator */}
       <div className="mb-6">
-        <StepIndicator current={step} onJump={setStep} />
+        <StepIndicator current={step} onJump={handleStepJump} />
       </div>
 
-      {/* Step content */}
-      {step === 1 && <StepPresetPicker />}
-      {step === 2 && <StepWeekPicker />}
-      {step === 3 && <StepFillBlocks />}
-      {step === 4 && <StepReview />}
+      {/* Step content — direction-aware slide */}
+      <AnimatePresence mode="wait" custom={direction}>
+        <motion.div
+          key={step}
+          custom={direction}
+          variants={STEP_VARIANTS}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          {step === 1 && <StepPresetPicker onNext={() => { setDirection(1); setStep(2) }} />}
+          {step === 2 && <StepWeekPicker onBack={() => { setDirection(-1); setStep(1) }} onNext={() => { setDirection(1); setStep(3) }} />}
+          {step === 3 && <StepFillBlocks onBack={() => { setDirection(-1); setStep(2) }} />}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Start over confirm */}
       <AlertDialog open={startOverOpen} onOpenChange={setStartOverOpen}>

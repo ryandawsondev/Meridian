@@ -1,19 +1,25 @@
 import { useState } from 'react'
 import { CalendarDays, Check } from 'lucide-react'
+import { motion } from 'motion/react'
 import { usePlanningStore } from '../../stores/planningStore'
 import { useCurrentAndNextWeek } from '../../hooks/useWeekRange'
 import { formatWeekLabel, fromISO } from '../../lib/date'
 import { Button } from '../ui/button'
 
-export default function StepWeekPicker() {
-  const { setTargetWeekStart, setStep } = usePlanningStore()
+interface StepWeekPickerProps {
+  onBack: () => void
+  onNext: () => void
+}
+
+export default function StepWeekPicker({ onBack, onNext }: StepWeekPickerProps) {
+  const { setTargetWeekStart } = usePlanningStore()
   const { thisWeek, nextWeek } = useCurrentAndNextWeek()
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null)
 
   function handleNext() {
     if (!selectedWeek) return
     setTargetWeekStart(selectedWeek)
-    setStep(3)
+    onNext()
   }
 
   return (
@@ -34,7 +40,7 @@ export default function StepWeekPicker() {
       />
 
       <div className="mt-2 flex justify-between">
-        <Button variant="outline" onClick={() => setStep(1)}>
+        <Button variant="outline" onClick={onBack}>
           Back
         </Button>
         <Button onClick={handleNext} disabled={!selectedWeek}>
@@ -57,8 +63,9 @@ function WeekCard({
   onSelect: () => void
 }) {
   return (
-    <button
+    <motion.button
       onClick={onSelect}
+      whileTap={{ scale: 0.98 }}
       className={`flex w-full items-center gap-4 rounded-xl border px-5 py-4 text-left transition-colors ${
         selected
           ? 'border-primary bg-primary/5'
@@ -71,6 +78,6 @@ function WeekCard({
         <p className="mt-0.5 text-xs text-muted-foreground">{range}</p>
       </div>
       {selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
-    </button>
+    </motion.button>
   )
 }

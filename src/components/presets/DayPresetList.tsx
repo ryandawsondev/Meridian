@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Pencil, Trash2, Plus, Layers } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
 import {
   useDayPresets,
   useCreateDayPreset,
@@ -29,7 +30,7 @@ import {
 import DayPresetEditor from './DayPresetEditor'
 
 export default function DayPresetList() {
-  const { data: presets = [], isLoading, error } = useDayPresets()
+  const { data: presets = [], isLoading, error, refetch } = useDayPresets()
   const createPreset = useCreateDayPreset()
   const deletePreset = useDeleteDayPreset()
 
@@ -52,14 +53,26 @@ export default function DayPresetList() {
   }
 
   if (isLoading) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
+    return (
+      <div className="flex flex-col gap-2 py-4">
+        {[1, 2, 3].map((n) => (
+          <div key={n} className="h-16 animate-pulse rounded-lg bg-muted" />
+        ))}
+      </div>
+    )
   }
 
   if (error) {
     return (
-      <p className="py-8 text-center text-sm text-destructive">
-        Failed to load presets. Reload the page.
-      </p>
+      <div className="flex items-center gap-2 py-8 text-center">
+        <p className="text-sm text-destructive">Failed to load presets.</p>
+        <button
+          onClick={() => void refetch()}
+          className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          Try again
+        </button>
+      </div>
     )
   }
 
@@ -85,58 +98,62 @@ export default function DayPresetList() {
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        {presets.map((preset) => (
-          <div
-            key={preset.id}
-            className="flex items-center gap-3 rounded-lg border border-input bg-card px-4 py-3"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="truncate font-medium">{preset.name}</p>
-              <div className="mt-0.5 flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">
-                  {preset.blocks.length} block{preset.blocks.length !== 1 ? 's' : ''}
-                </span>
-                {preset.blocks.some((b) => b.isVariable) && (
-                  <Badge variant="secondary" className="text-[10px]">
-                    has variable blocks
-                  </Badge>
-                )}
+      <motion.div className="flex flex-col gap-2">
+        <AnimatePresence>
+          {presets.map((preset) => (
+            <motion.div
+              key={preset.id}
+              layout
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-3 rounded-lg border border-input bg-card px-4 py-3"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{preset.name}</p>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">
+                    {preset.blocks.length} block{preset.blocks.length !== 1 ? 's' : ''}
+                  </span>
+                  {preset.blocks.some((b) => b.isVariable) && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      has variable blocks
+                    </Badge>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="flex shrink-0 gap-1">
-              {preset.blocks.slice(0, 4).map((b) => (
-                <div
-                  key={b.id}
-                  className="h-4 w-4 rounded-full"
-                  style={{ backgroundColor: b.colour }}
-                  title={b.title}
-                />
-              ))}
-            </div>
-            <div className="flex shrink-0 gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setEditingPreset(preset)}
-                aria-label="Edit preset"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
-                onClick={() => setDeletingId(preset.id)}
-                aria-label="Delete preset"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
+              <div className="flex shrink-0 gap-1">
+                {preset.blocks.slice(0, 4).map((b) => (
+                  <div
+                    key={b.id}
+                    className="h-4 w-4 rounded-full"
+                    style={{ backgroundColor: b.colour }}
+                    title={b.title}
+                  />
+                ))}
+              </div>
+              <div className="flex shrink-0 gap-0.5">
+                {/* Touch-target-compliant icon buttons */}
+                <button
+                  className="-m-1 flex h-10 w-10 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => setEditingPreset(preset)}
+                  aria-label="Edit preset"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  className="-m-1 flex h-10 w-10 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => setDeletingId(preset.id)}
+                  aria-label="Delete preset"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
 
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

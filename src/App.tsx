@@ -1,7 +1,7 @@
 import { Component, type ReactNode } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { Toaster } from 'sonner'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import AppShell from './components/layout/AppShell'
 import SignInPage from './pages/SignInPage'
@@ -12,14 +12,6 @@ import PreviewPage from './pages/PreviewPage'
 import HistoryPage from './pages/HistoryPage'
 
 const queryClient = new QueryClient()
-
-function ScrollToTop() {
-  const { pathname } = useLocation()
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
-  return null
-}
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null }
@@ -39,6 +31,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
           >
             Reload page
           </button>
+          <a href="/" className="text-sm text-muted-foreground underline underline-offset-4">
+            Go home
+          </a>
         </div>
       )
     }
@@ -51,7 +46,6 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter basename={import.meta.env.BASE_URL}>
-          <ScrollToTop />
           <Routes>
             <Route path="/sign-in" element={<SignInPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
@@ -98,6 +92,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/planning" replace />} />
           </Routes>
         </BrowserRouter>
+        <Toaster position="bottom-center" offset={80} richColors />
       </QueryClientProvider>
     </ErrorBoundary>
   )
