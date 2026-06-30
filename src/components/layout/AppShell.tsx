@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useUiStore } from '../../stores/uiStore'
 import { usePlanningStore } from '../../stores/planningStore'
 import BottomNav from './BottomNav'
-import ThemeToggle from '../ui/theme-toggle'
+import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 
 interface AppShellProps {
   children: ReactNode
@@ -16,6 +16,7 @@ export default function AppShell({ children }: AppShellProps) {
   const location = useLocation()
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const theme = useUiStore((s) => s.theme)
+  const setTheme = useUiStore((s) => s.setTheme)
   const checkStaleness = usePlanningStore((s) => s.checkStaleness)
 
   // Apply persisted theme on mount
@@ -45,9 +46,15 @@ export default function AppShell({ children }: AppShellProps) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
-        <span className="text-sm font-semibold tracking-tight">Meridian</span>
+        <Link to="/planning" className="text-sm font-semibold tracking-tight">
+          Meridian
+        </Link>
         <div className="flex items-center gap-1">
-          <ThemeToggle />
+          <AnimatedThemeToggler
+            theme={theme}
+            onThemeChange={setTheme}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&>svg]:h-4 [&>svg]:w-4"
+          />
           <Link
             to="/settings"
             aria-label="Settings"

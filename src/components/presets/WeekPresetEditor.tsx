@@ -1,11 +1,18 @@
 import { useState } from 'react'
-import { Check, ChevronDown } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type { DayPreset, WeekPreset } from '../../types'
 import { useUpdateWeekPreset, useSetWeekPresetDay } from '../../hooks/usePresets'
 import { useUiStore } from '../../stores/uiStore'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select'
 import {
   Dialog,
   DialogContent,
@@ -34,32 +41,6 @@ interface WeekPresetEditorProps {
   onClose: () => void
 }
 
-// Styled select wrapper — matches shadcn/ui Input appearance, replaces native OS picker
-function StyledSelect({
-  value,
-  onChange,
-  children,
-  'aria-label': ariaLabel,
-}: {
-  value: string
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
-  children: React.ReactNode
-  'aria-label'?: string
-}) {
-  return (
-    <div className="relative">
-      <select
-        className="flex h-9 w-full appearance-none rounded-md border border-input bg-background pl-3 pr-8 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
-        value={value}
-        onChange={onChange}
-        aria-label={ariaLabel}
-      >
-        {children}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-    </div>
-  )
-}
 
 export default function WeekPresetEditor({
   preset,
@@ -92,11 +73,11 @@ export default function WeekPresetEditor({
     setTimeout(() => setNameSaved(false), 2000)
   }
 
-  async function handleDayChange(dayOfWeek: Day, dayPresetId: string) {
+  async function handleDayChange(dayOfWeek: Day, value: string) {
     await setDay.mutateAsync({
       weekPresetId: preset.id,
       dayOfWeek,
-      dayPresetId: dayPresetId || null,
+      dayPresetId: value === '__none__' ? null : value,
     })
   }
 
@@ -160,18 +141,22 @@ export default function WeekPresetEditor({
                 <span className="w-24 shrink-0 text-sm capitalize text-muted-foreground">
                   {day}
                 </span>
-                <StyledSelect
-                  value={preset.days[day] ?? ''}
-                  onChange={(e) => handleDayChange(day, e.target.value)}
-                  aria-label={`${day} day preset`}
+                <Select
+                  value={preset.days[day] ?? '__none__'}
+                  onValueChange={(v) => handleDayChange(day, v)}
                 >
-                  <option value="">— None —</option>
-                  {dayPresets.map((dp) => (
-                    <option key={dp.id} value={dp.id}>
-                      {dp.name}
-                    </option>
-                  ))}
-                </StyledSelect>
+                  <SelectTrigger aria-label={`${day} day preset`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— None —</SelectItem>
+                    {dayPresets.map((dp) => (
+                      <SelectItem key={dp.id} value={dp.id}>
+                        {dp.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             ))}
           </div>

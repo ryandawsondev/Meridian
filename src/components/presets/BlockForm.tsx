@@ -81,7 +81,7 @@ export default function BlockForm({
       )}
 
       <div className="flex flex-col gap-2">
-        <Label>Colour</Label>
+        <Label htmlFor="block-colour">Colour</Label>
         {/* Swatch grid */}
         <div className="grid grid-cols-6 gap-2">
           {COLOUR_SWATCHES.map((hex) => (
@@ -104,9 +104,8 @@ export default function BlockForm({
             style={{ backgroundColor: colour }}
           />
           <Input
+            id="block-colour"
             className="font-mono text-xs"
-            value={colour}
-            onChange={(e) => setValue('colour', e.target.value)}
             placeholder="#6366f1"
             {...register('colour')}
           />

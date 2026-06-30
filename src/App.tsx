@@ -46,7 +46,10 @@ export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <BrowserRouter
+          basename={import.meta.env.BASE_URL}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <Routes>
             <Route path="/sign-in" element={<SignInPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />

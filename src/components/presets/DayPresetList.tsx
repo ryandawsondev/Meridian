@@ -55,7 +55,8 @@ export default function DayPresetList() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-2 py-4">
+      <div className="flex flex-col gap-2 py-4" aria-label="Loading">
+        <span className="sr-only">Loading</span>
         {[1, 2, 3].map((n) => (
           <div key={n} className="h-16 animate-pulse rounded-lg bg-muted" />
         ))}

@@ -55,7 +55,7 @@ describe('planningStore', () => {
 
   it('clearSession resets all state', () => {
     const store = usePlanningStore.getState()
-    store.setStep(4)
+    store.setStep(3)
     store.setWeekPresetId('x')
     store.setTargetWeekStart('2025-07-07')
     store.setFilledBlock('b1', { blockId: 'b1', title: 'X' })
