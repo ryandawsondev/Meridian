@@ -45,7 +45,7 @@ function makeWrapper() {
     return React.createElement(
       QueryClientProvider,
       { client: qc },
-      React.createElement(BrowserRouter, null, children)
+      React.createElement(BrowserRouter, { future: { v7_startTransition: true, v7_relativeSplatPath: true } }, children)
     )
   }
 }
