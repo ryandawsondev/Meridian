@@ -44,38 +44,8 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           VITE_GOOGLE_CALENDAR_API_KEY: ${{ secrets.VITE_GOOGLE_CALENDAR_API_KEY }}
 
-      - name: Upload dist artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: ./dist
-
       - name: Deploy to GitHub Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-
-  merge:
-    needs: ci
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: ./dist
-
-      - name: Merge PR into master
-        run: gh pr merge --squash "${{ github.event.pull_request.number }}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-
-      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
