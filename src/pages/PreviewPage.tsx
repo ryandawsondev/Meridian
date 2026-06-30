@@ -9,6 +9,7 @@ import { useWeekRange } from '../hooks/useWeekRange'
 import { useAuth } from '../hooks/useAuth'
 import { getGoogleAccessToken } from '../lib/auth'
 import { usePublishWeek, type PublishResult } from '../hooks/useGoogleCalendar'
+import { signIn } from '../lib/auth'
 import DayView from '../components/calendar/DayView'
 import WeekView from '../components/calendar/WeekView'
 import ListView from '../components/calendar/ListView'
@@ -105,8 +106,14 @@ export default function PreviewPage() {
         <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950">
           <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <p className="flex-1 text-sm text-amber-700 dark:text-amber-300">
-            Google session expired — sign out and sign back in to publish.
+            Google session expired — reconnect to publish.
           </p>
+          <button
+            onClick={() => void signIn()}
+            className="shrink-0 rounded-md border border-amber-400 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-200 dark:border-amber-600 dark:bg-amber-900 dark:text-amber-200 dark:hover:bg-amber-800"
+          >
+            Reconnect
+          </button>
         </div>
       )}
 

@@ -1,9 +1,8 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { LogOut, WifiOff } from 'lucide-react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { Settings, WifiOff } from 'lucide-react'
+import { useLocation, Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { toast } from 'sonner'
-import { signOut } from '../../lib/auth'
 import { useUiStore } from '../../stores/uiStore'
 import { usePlanningStore } from '../../stores/planningStore'
 import BottomNav from './BottomNav'
@@ -14,7 +13,6 @@ interface AppShellProps {
 }
 
 export default function AppShell({ children }: AppShellProps) {
-  const navigate = useNavigate()
   const location = useLocation()
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const theme = useUiStore((s) => s.theme)
@@ -44,25 +42,20 @@ export default function AppShell({ children }: AppShellProps) {
     }
   }, [])
 
-  async function handleSignOut() {
-    await signOut()
-    navigate('/')
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <span className="text-sm font-semibold tracking-tight">Meridian</span>
         <div className="flex items-center gap-1">
           <ThemeToggle />
-          <button
-            onClick={handleSignOut}
-            aria-label="Sign out"
-            title="Sign out"
+          <Link
+            to="/settings"
+            aria-label="Settings"
+            title="Settings"
             className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <LogOut className="h-4 w-4" />
-          </button>
+            <Settings className="h-4 w-4" />
+          </Link>
         </div>
       </header>
 

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { usePublishedHistory, HISTORY_MONTHS_STEP } from '../hooks/usePublishedHistory'
 import { useCalendarEventsForWeek } from '../hooks/useGoogleCalendar'
 import { useAuth } from '../hooks/useAuth'
+import { getGoogleAccessToken, signIn } from '../lib/auth'
 import { formatWeekLabel, fromISO } from '../lib/date'
 import { Button } from '../components/ui/button'
 import type { DbPublishedWeek } from '../types/db'
@@ -37,7 +38,23 @@ function groupEventsByDate(events: CalendarEvent[]): { date: string; events: Cal
 // ─── WeekDetail ───────────────────────────────────────────────────────────────
 
 function WeekDetail({ weekStartISO }: { weekStartISO: string }) {
+  const { session } = useAuth()
+  const token = getGoogleAccessToken(session)
   const { data: events, isLoading, isError, refetch } = useCalendarEventsForWeek(weekStartISO)
+
+  if (!token) {
+    return (
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <p className="text-sm text-muted-foreground">Google session expired.</p>
+        <button
+          onClick={() => void signIn()}
+          className="shrink-0 rounded-md border border-input bg-background px-3 py-1 text-xs font-medium transition-colors hover:bg-muted"
+        >
+          Reconnect
+        </button>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (

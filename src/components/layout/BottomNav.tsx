@@ -19,11 +19,7 @@ export default function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-50 flex border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     >
       {NAV_ITEMS.map(({ to, label, Icon, primary }) => (
-        <NavLink
-          key={to}
-          to={to}
-          className="flex flex-1"
-        >
+        <NavLink key={to} to={to} className="flex flex-1">
           {({ isActive }) => (
             <motion.div
               className="relative flex flex-1 flex-col items-center gap-1 py-3"
@@ -34,7 +30,7 @@ export default function BottomNav() {
               {isActive && (
                 <motion.div
                   layoutId="nav-pill"
-                  className="absolute left-1/2 top-0 h-0.5 w-8 -translate-x-1/2 rounded-full bg-primary"
+                  className="absolute inset-x-0 top-0 mx-auto h-0.5 w-8 rounded-full bg-primary"
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 />
               )}

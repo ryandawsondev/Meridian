@@ -41,9 +41,10 @@ export default function DayPresetList() {
 
   async function handleCreate() {
     if (!newName.trim()) return
-    await createPreset.mutateAsync(newName.trim())
+    const created = await createPreset.mutateAsync(newName.trim())
     setNewName('')
     setCreateOpen(false)
+    setEditingPreset(created)
   }
 
   async function handleDelete() {

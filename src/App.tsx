@@ -10,6 +10,7 @@ import PlanningPage from './pages/PlanningPage'
 import PresetsPage from './pages/PresetsPage'
 import PreviewPage from './pages/PreviewPage'
 import HistoryPage from './pages/HistoryPage'
+import SettingsPage from './pages/SettingsPage'
 
 const queryClient = new QueryClient()
 
@@ -85,6 +86,16 @@ export default function App() {
                 <ProtectedRoute>
                   <AppShell>
                     <HistoryPage />
+                  </AppShell>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <AppShell>
+                    <SettingsPage />
                   </AppShell>
                 </ProtectedRoute>
               }
