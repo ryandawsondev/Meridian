@@ -3,7 +3,6 @@ import { Calendar, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { usePublishedHistory, HISTORY_MONTHS_STEP } from '../hooks/usePublishedHistory'
 import { useCalendarEventsForWeek } from '../hooks/useGoogleCalendar'
 import { useAuth } from '../hooks/useAuth'
-import { getGoogleAccessToken } from '../lib/auth'
 import { formatWeekLabel, fromISO } from '../lib/date'
 import { Button } from '../components/ui/button'
 import type { DbPublishedWeek } from '../types/db'
@@ -52,9 +51,7 @@ function WeekDetail({ weekStartISO }: { weekStartISO: string }) {
   }
 
   if (!events || events.length === 0) {
-    return (
-      <p className="px-4 py-3 text-sm text-muted-foreground">No events found in calendar.</p>
-    )
+    return <p className="px-4 py-3 text-sm text-muted-foreground">No events found in calendar.</p>
   }
 
   const groups = groupEventsByDate(events)
@@ -72,7 +69,10 @@ function WeekDetail({ weekStartISO }: { weekStartISO: string }) {
           </p>
           <div className="flex flex-col gap-1.5">
             {dayEvents.map((event) => (
-              <div key={event.id} className="rounded-lg border border-input bg-background px-3 py-2">
+              <div
+                key={event.id}
+                className="rounded-lg border border-input bg-background px-3 py-2"
+              >
                 <p className="text-sm font-medium">{event.summary}</p>
                 <p className="text-xs text-muted-foreground">
                   {formatTime(event.start.dateTime)} – {formatTime(event.end.dateTime)}
@@ -137,9 +137,8 @@ export default function HistoryPage() {
   const [monthsBack, setMonthsBack] = useState(INITIAL_MONTHS)
   const { data: weeks, isLoading, isError } = usePublishedHistory(monthsBack)
   const { session } = useAuth()
-  const token = getGoogleAccessToken(session)
 
-  if (!token) {
+  if (!session) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-4 py-16">
         <p className="text-sm text-muted-foreground">Sign in to view history.</p>
@@ -158,9 +157,7 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {isError && (
-        <p className="text-sm text-destructive">Failed to load history.</p>
-      )}
+      {isError && <p className="text-sm text-destructive">Failed to load history.</p>}
 
       {!isLoading && !isError && weeks && weeks.length === 0 && (
         <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-input">
