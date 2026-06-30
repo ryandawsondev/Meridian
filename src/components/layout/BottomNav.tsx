@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { Calendar, LayoutGrid, Clock } from 'lucide-react'
+import { usePlanningStore } from '../../stores/planningStore'
 
 const NAV_ITEMS = [
   { to: '/planning', label: 'Plan', Icon: Calendar },
@@ -8,6 +9,9 @@ const NAV_ITEMS = [
 ] as const
 
 export default function BottomNav() {
+  const step = usePlanningStore((s) => s.step)
+  const sessionActive = step > 1
+
   return (
     <nav
       aria-label="Main navigation"
@@ -23,7 +27,12 @@ export default function BottomNav() {
             }`
           }
         >
-          <Icon className="h-5 w-5" />
+          <div className="relative">
+            <Icon className="h-5 w-5" />
+            {to === '/planning' && sessionActive && (
+              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />
+            )}
+          </div>
           <span>{label}</span>
         </NavLink>
       ))}

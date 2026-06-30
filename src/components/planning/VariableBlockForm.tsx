@@ -25,12 +25,15 @@ export default function VariableBlockForm({ block, dayDate, error }: VariableBlo
 
   const [title, setTitle] = useState(existing?.title ?? '')
   const [notes, setNotes] = useState(existing?.notes ?? '')
+  const [titleTouched, setTitleTouched] = useState(false)
   const [showSubTasks, setShowSubTasks] = useState(
     existing?.subTasks != null && existing.subTasks.length > 0
   )
   const [subTasks, setSubTasks] = useState<SubTask[]>(
     existing?.subTasks?.map((s) => ({ title: s.title, notes: s.notes ?? '' })) ?? []
   )
+
+  const showTitleError = (error || titleTouched) && !title.trim()
 
   function sync(
     nextTitle: string,
@@ -93,7 +96,7 @@ export default function VariableBlockForm({ block, dayDate, error }: VariableBlo
   return (
     <div
       className={`flex flex-col gap-3 rounded-lg border px-4 py-4 ${
-        error && !title.trim() ? 'border-destructive' : 'border-input'
+        showTitleError ? 'border-destructive' : 'border-input'
       }`}
     >
       {/* Block meta */}
@@ -117,9 +120,10 @@ export default function VariableBlockForm({ block, dayDate, error }: VariableBlo
           placeholder={`e.g. ${block.title}`}
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
-          className={error && !title.trim() ? 'border-destructive' : ''}
+          onBlur={() => setTitleTouched(true)}
+          className={showTitleError ? 'border-destructive' : ''}
         />
-        {error && !title.trim() && (
+        {showTitleError && (
           <p className="text-xs text-destructive">Required</p>
         )}
       </div>
@@ -147,12 +151,12 @@ export default function VariableBlockForm({ block, dayDate, error }: VariableBlo
         ) : (
           <ChevronDown className="h-3.5 w-3.5" />
         )}
-        {showSubTasks ? 'Hide sub-tasks' : 'Add sub-tasks'}
+        {showSubTasks ? 'Hide sub-tasks' : 'Add sub-tasks to this block'}
       </button>
 
       {/* Sub-tasks */}
       {showSubTasks && (
-        <div className="flex flex-col gap-2 pl-2 border-l-2 border-border">
+        <div className="flex flex-col gap-2 border-l-2 border-border pl-2">
           {subTasks.map((task, i) => (
             <div key={i} className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">

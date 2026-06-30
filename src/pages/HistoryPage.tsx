@@ -124,7 +124,15 @@ function WeekCard({ week }: { week: DbPublishedWeek }) {
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         )}
       </button>
-      {expanded && <WeekDetail weekStartISO={week.week_start} />}
+      <div
+        className={`grid transition-[grid-template-rows] duration-200 ease-in-out ${
+          expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
+        <div className="overflow-hidden">
+          {expanded && <WeekDetail weekStartISO={week.week_start} />}
+        </div>
+      </div>
     </div>
   )
 }
@@ -160,8 +168,11 @@ export default function HistoryPage() {
       {isError && <p className="text-sm text-destructive">Failed to load history.</p>}
 
       {!isLoading && !isError && weeks && weeks.length === 0 && (
-        <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-input">
-          <p className="text-sm text-muted-foreground">No published weeks yet</p>
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-input px-6 py-16 text-center">
+          <p className="text-sm font-medium">No published weeks yet</p>
+          <p className="text-xs text-muted-foreground">
+            Plan and publish your first week to see it here.
+          </p>
         </div>
       )}
 

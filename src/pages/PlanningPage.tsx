@@ -1,10 +1,21 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePlanningStore } from '../stores/planningStore'
+import type { PlanningStep } from '../stores/planningStore'
 import StepPresetPicker from '../components/planning/StepPresetPicker'
 import StepWeekPicker from '../components/planning/StepWeekPicker'
 import StepFillBlocks from '../components/planning/StepFillBlocks'
 import StepReview from '../components/planning/StepReview'
 import { Button } from '../components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog'
 
 const STEP_LABELS: Record<number, string> = {
   1: 'Choose preset',
@@ -13,22 +24,32 @@ const STEP_LABELS: Record<number, string> = {
   4: 'Review',
 }
 
-function StepIndicator({ current }: { current: number }) {
+function StepIndicator({
+  current,
+  onJump,
+}: {
+  current: number
+  onJump: (step: PlanningStep) => void
+}) {
   return (
     <div className="flex items-center gap-1">
       {[1, 2, 3, 4].map((n) => (
         <div key={n} className="flex items-center gap-1">
-          <div
-            className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
+          <button
+            onClick={() => n < current && onJump(n as PlanningStep)}
+            disabled={n >= current}
+            aria-label={`${STEP_LABELS[n]}${n < current ? ' (click to go back)' : ''}`}
+            title={n < current ? `Go back to: ${STEP_LABELS[n]}` : STEP_LABELS[n]}
+            className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium transition-colors ${
               n < current
-                ? 'bg-primary text-primary-foreground'
+                ? 'cursor-pointer bg-primary text-primary-foreground hover:opacity-80'
                 : n === current
-                ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2'
-                : 'bg-muted text-muted-foreground'
+                ? 'cursor-default bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2'
+                : 'cursor-default bg-muted text-muted-foreground'
             }`}
           >
             {n}
-          </div>
+          </button>
           {n < 4 && (
             <div className={`h-px w-6 ${n < current ? 'bg-primary' : 'bg-border'}`} />
           )}
@@ -39,12 +60,18 @@ function StepIndicator({ current }: { current: number }) {
 }
 
 export default function PlanningPage() {
-  const { step, clearSession } = usePlanningStore()
+  const { step, clearSession, setStep } = usePlanningStore()
   const topRef = useRef<HTMLDivElement>(null)
+  const [startOverOpen, setStartOverOpen] = useState(false)
 
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [step])
+
+  function handleStartOver() {
+    clearSession()
+    setStartOverOpen(false)
+  }
 
   return (
     <div ref={topRef} className="mx-auto w-full max-w-lg px-4 py-6">
@@ -57,7 +84,7 @@ export default function PlanningPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={clearSession}
+          onClick={() => setStartOverOpen(true)}
           className="text-xs text-muted-foreground"
         >
           Start over
@@ -66,7 +93,7 @@ export default function PlanningPage() {
 
       {/* Step indicator */}
       <div className="mb-6">
-        <StepIndicator current={step} />
+        <StepIndicator current={step} onJump={setStep} />
       </div>
 
       {/* Step content */}
@@ -74,6 +101,22 @@ export default function PlanningPage() {
       {step === 2 && <StepWeekPicker />}
       {step === 3 && <StepFillBlocks />}
       {step === 4 && <StepReview />}
+
+      {/* Start over confirm */}
+      <AlertDialog open={startOverOpen} onOpenChange={setStartOverOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start over?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear your current selections and any filled blocks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleStartOver}>Start over</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

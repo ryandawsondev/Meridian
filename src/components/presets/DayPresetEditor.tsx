@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronUp, ChevronDown, Pencil, Trash2, Plus } from 'lucide-react'
+import { ChevronUp, ChevronDown, Pencil, Trash2, Plus, Check } from 'lucide-react'
 import type { DayPreset } from '../../types'
 import type { BlockFormValues } from '../../schemas'
 import { validateNoOverlap } from '../../schemas'
@@ -39,6 +39,7 @@ type EditingBlock = { id: string; values: Partial<BlockFormValues> } | null
 
 export default function DayPresetEditor({ preset, open, onClose }: DayPresetEditorProps) {
   const [name, setName] = useState(preset.name)
+  const [nameSaved, setNameSaved] = useState(false)
   const [blockDialogOpen, setBlockDialogOpen] = useState(false)
   const [editingBlock, setEditingBlock] = useState<EditingBlock>(null)
   const [overlapError, setOverlapError] = useState<string | null>(null)
@@ -56,12 +57,15 @@ export default function DayPresetEditor({ preset, open, onClose }: DayPresetEdit
 
   function handleNameChange(v: string) {
     setName(v)
+    setNameSaved(false)
     setHasUnsavedChanges(v !== preset.name)
   }
 
   async function handleSaveName() {
     await updatePreset.mutateAsync({ id: preset.id, name })
     setHasUnsavedChanges(false)
+    setNameSaved(true)
+    setTimeout(() => setNameSaved(false), 2000)
   }
 
   function handleClose() {
@@ -96,7 +100,6 @@ export default function DayPresetEditor({ preset, open, onClose }: DayPresetEdit
   }
 
   async function handleBlockSubmit(values: BlockFormValues) {
-    // Check overlap against existing blocks (excluding the block being edited)
     const otherBlocks = preset.blocks.filter((b) => b.id !== editingBlock?.id)
     const overlapMsg = validateNoOverlap([...otherBlocks, { ...values, title: values.title }])
     if (overlapMsg) {
@@ -162,6 +165,12 @@ export default function DayPresetEditor({ preset, open, onClose }: DayPresetEdit
                 >
                   Save
                 </Button>
+              )}
+              {nameSaved && !hasNameChanged && (
+                <span className="flex items-center gap-1 text-xs text-green-600">
+                  <Check className="h-3.5 w-3.5" />
+                  Saved
+                </span>
               )}
             </div>
           </div>

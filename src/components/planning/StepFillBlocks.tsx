@@ -56,11 +56,11 @@ export default function StepFillBlocks() {
     return (
       <div className="flex flex-col gap-6">
         <div className="rounded-xl border border-dashed border-input px-6 py-10 text-center">
-          <p className="text-sm font-medium">No variable blocks</p>
+          <p className="text-sm font-medium">Nothing to fill in</p>
           <p className="mt-1 text-xs text-muted-foreground">
             {weekPresetId === null
-              ? 'Blank week — nothing to fill in.'
-              : 'This week preset has no variable blocks.'}
+              ? 'Blank week — all blocks will be empty until you add them in preview.'
+              : 'All blocks in this week preset have fixed titles. Nothing to customise for this week.'}
           </p>
         </div>
         <div className="flex justify-between">
@@ -76,7 +76,7 @@ export default function StepFillBlocks() {
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm text-muted-foreground">
-        Fill in what you're doing for each variable block.
+        These blocks have placeholder titles — fill in what you're actually doing for each one this week.
       </p>
 
       {daySchedules.map(({ dayLabel, dateISO, variableBlocks }) => {

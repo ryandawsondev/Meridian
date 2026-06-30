@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, List, LayoutGrid, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Calendar, List, LayoutGrid, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { usePlanningPreview } from '../hooks/usePlanningPreview'
 import { useUiStore } from '../stores/uiStore'
 import { usePlanningStore } from '../stores/planningStore'
@@ -20,6 +20,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog'
 
 type EditTarget = { blockId: string; originalTitle: string }
 
@@ -32,19 +42,20 @@ const VIEW_OPTIONS = [
 export default function PreviewPage() {
   const navigate = useNavigate()
   const { viewMode, setViewMode } = useUiStore()
-  const { targetWeekStart, weekPresetId, setStep, clearSession } = usePlanningStore()
+  const { targetWeekStart, weekPresetId, clearSession } = usePlanningStore()
   const { session } = useAuth()
   const planDays = usePlanningPreview()
   const weekRange = useWeekRange(targetWeekStart)
   const publishWeek = usePublishWeek()
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
   const [publishResult, setPublishResult] = useState<PublishResult | null>(null)
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false)
 
   function handleEditBlock(blockId: string, originalTitle: string) {
     setEditTarget({ blockId, originalTitle })
   }
 
-  async function handlePublish() {
+  async function handlePublishConfirmed() {
     const token = getGoogleAccessToken(session)
     if (!token || !planDays || !targetWeekStart) return
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -74,53 +85,13 @@ export default function PreviewPage() {
   }
 
   const token = getGoogleAccessToken(session)
+  const totalEvents = planDays.reduce((acc, d) => acc + d.blocks.length, 0)
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-6">
-      {/* Header */}
-      <div className="mb-4 flex items-start justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Week preview</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">{weekRange.label}</p>
-        </div>
-        <div className="flex rounded-lg border border-input bg-muted p-0.5">
-          {VIEW_OPTIONS.map(({ value, label, Icon }) => (
-            <button
-              key={value}
-              onClick={() => setViewMode(value)}
-              aria-label={label}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                viewMode === value
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* View */}
-      <div className="mb-6">
-        {viewMode === 'day' && <DayView days={planDays} onEditBlock={handleEditBlock} />}
-        {viewMode === 'week' && <WeekView days={planDays} onEditBlock={handleEditBlock} />}
-        {viewMode === 'list' && <ListView days={planDays} onEditBlock={handleEditBlock} />}
-      </div>
-
-      {/* Publish error */}
-      {publishWeek.isError && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
-          <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
-          <p className="text-sm text-destructive">
-            Publish failed: {String(publishWeek.error)}
-          </p>
-        </div>
-      )}
-
+    <div className="relative">
+      {/* Token expiry — sticky top banner */}
       {!token && session && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950">
+        <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950">
           <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <p className="text-sm text-amber-700 dark:text-amber-300">
             Google session expired — sign out and sign back in to publish.
@@ -128,23 +99,74 @@ export default function PreviewPage() {
         </div>
       )}
 
-      {/* Footer */}
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={() => {
-            setStep(4)
-            navigate('/planning')
-          }}
-        >
-          Back
-        </Button>
-        <Button
-          onClick={handlePublish}
-          disabled={publishWeek.isPending || !token}
-        >
-          {publishWeek.isPending ? 'Publishing…' : 'Publish to Calendar'}
-        </Button>
+      {/* Loading overlay during publish */}
+      {publishWeek.isPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Publishing to Google Calendar…</p>
+          </div>
+        </div>
+      )}
+
+      <div className="mx-auto w-full max-w-2xl px-4 py-6">
+        {/* Header */}
+        <div className="mb-4 flex items-start justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">Week preview</h1>
+            <p className="mt-0.5 text-xs text-muted-foreground">{weekRange.label}</p>
+          </div>
+          <div className="flex rounded-lg border border-input bg-muted p-0.5">
+            {VIEW_OPTIONS.map(({ value, label, Icon }) => (
+              <button
+                key={value}
+                onClick={() => setViewMode(value)}
+                aria-label={label}
+                className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === value
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* View */}
+        <div className="mb-6">
+          {viewMode === 'day' && <DayView days={planDays} onEditBlock={handleEditBlock} />}
+          {viewMode === 'week' && <WeekView days={planDays} onEditBlock={handleEditBlock} />}
+          {viewMode === 'list' && <ListView days={planDays} onEditBlock={handleEditBlock} />}
+        </div>
+
+        {/* Publish error */}
+        {publishWeek.isError && (
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+            <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+            <p className="text-sm text-destructive">
+              Publish failed: {String(publishWeek.error)}
+            </p>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/planning')}
+          >
+            Back
+          </Button>
+          <Button
+            onClick={() => setPublishConfirmOpen(true)}
+            disabled={publishWeek.isPending || !token}
+          >
+            Publish to Calendar
+          </Button>
+        </div>
       </div>
 
       {/* Edit dialog */}
@@ -155,6 +177,24 @@ export default function PreviewPage() {
           onClose={() => setEditTarget(null)}
         />
       )}
+
+      {/* Publish confirm */}
+      <AlertDialog open={publishConfirmOpen} onOpenChange={setPublishConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publish to Google Calendar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will create {totalEvents} event{totalEvents !== 1 ? 's' : ''} in your Google Calendar for {weekRange.label}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePublishConfirmed}>
+              Publish
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Publish result dialog */}
       {publishResult && (
