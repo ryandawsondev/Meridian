@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../ui/alert-dialog'
-import BlockForm from './BlockForm'
+import BlockForm, { COLOUR_SWATCHES } from './BlockForm'
 
 interface DayPresetEditorProps {
   preset: DayPreset
@@ -46,7 +46,9 @@ export default function DayPresetEditor({ preset: initialPreset, open, onClose }
   const [name, setName] = useState(initialPreset.name)
   const [nameSaved, setNameSaved] = useState(false)
   const [blockDialogOpen, setBlockDialogOpen] = useState(false)
+  const [blockDialogKey, setBlockDialogKey] = useState(0)
   const [editingBlock, setEditingBlock] = useState<EditingBlock>(null)
+  const [newBlockDefaults, setNewBlockDefaults] = useState<Partial<BlockFormValues>>({})
   const [overlapError, setOverlapError] = useState<string | null>(null)
   const [closeAlertOpen, setCloseAlertOpen] = useState(false)
   const [importSectionOpen, setImportSectionOpen] = useState(false)
@@ -89,6 +91,12 @@ export default function DayPresetEditor({ preset: initialPreset, open, onClose }
   }
 
   function openAddBlock() {
+    const latestEnd = preset.blocks.reduce((max, b) => (b.endTime > max ? b.endTime : max), '09:00')
+    const [h, m] = latestEnd.split(':').map(Number)
+    const defaultEndTime = `${String(Math.min(h + 1, 23)).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    const nextColour = COLOUR_SWATCHES[preset.blocks.length % COLOUR_SWATCHES.length]
+    setNewBlockDefaults({ startTime: latestEnd, endTime: defaultEndTime, colour: nextColour })
+    setBlockDialogKey((k) => k + 1)
     setEditingBlock(null)
     setOverlapError(null)
     setBlockDialogOpen(true)
@@ -265,7 +273,8 @@ export default function DayPresetEditor({ preset: initialPreset, open, onClose }
             <DialogTitle>{editingBlock ? 'Edit block' : 'Add block'}</DialogTitle>
           </DialogHeader>
           <BlockForm
-            defaultValues={editingBlock?.values}
+            key={blockDialogKey}
+            defaultValues={editingBlock ? editingBlock.values : newBlockDefaults}
             onSubmit={handleBlockSubmit}
             onCancel={() => setBlockDialogOpen(false)}
             isSubmitting={isBlockSubmitting}
