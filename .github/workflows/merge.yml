@@ -1,0 +1,35 @@
+name: Merge
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Merge PR into master
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head "${{ github.event.workflow_run.head_branch }}" \
+            --base master \
+            --state open \
+            --json number \
+            --jq '.[0].number' \
+            --repo "${{ github.repository }}")
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open PR found for branch ${{ github.event.workflow_run.head_branch }} → master"
+            exit 0
+          fi
+
+          gh pr merge "$PR_NUMBER" --merge --repo "${{ github.repository }}"
