@@ -80,6 +80,6 @@ describe('ListView', () => {
     render(<ListView days={mockDays} onEditBlock={onEditBlock} />)
 
     await user.click(screen.getByRole('button', { name: /edit block/i }))
-    expect(onEditBlock).toHaveBeenCalledWith('b-2', 'Variable Block')
+    expect(onEditBlock).toHaveBeenCalledWith('b-2', 'Variable Block', '2024-06-24')
   })
 })
