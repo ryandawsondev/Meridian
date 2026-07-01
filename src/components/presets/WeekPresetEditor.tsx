@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Check } from 'lucide-react'
 import type { DayPreset, WeekPreset } from '../../types'
-import { useUpdateWeekPreset, useSetWeekPresetDay } from '../../hooks/usePresets'
+import { useUpdateWeekPreset, useSetWeekPresetDay, useWeekPresets } from '../../hooks/usePresets'
 import { useUiStore } from '../../stores/uiStore'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -43,12 +43,15 @@ interface WeekPresetEditorProps {
 
 
 export default function WeekPresetEditor({
-  preset,
+  preset: initialPreset,
   dayPresets,
   open,
   onClose,
 }: WeekPresetEditorProps) {
-  const [name, setName] = useState(preset.name)
+  const { data: allWeekPresets = [] } = useWeekPresets()
+  const preset = allWeekPresets.find((p) => p.id === initialPreset.id) ?? initialPreset
+
+  const [name, setName] = useState(initialPreset.name)
   const [nameSaved, setNameSaved] = useState(false)
   const [closeAlertOpen, setCloseAlertOpen] = useState(false)
   const [emptyAlertOpen, setEmptyAlertOpen] = useState(false)

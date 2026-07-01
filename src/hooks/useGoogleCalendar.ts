@@ -14,8 +14,6 @@ import { useAuth } from './useAuth'
 import { parseHHMM, toIso8601, fromISO } from '../lib/date'
 import type { PreviewDay } from './usePlanningPreview'
 
-export const publishedWeeksKey = ['publishedWeeks'] as const
-
 export interface PublishInput {
   days: PreviewDay[]
   weekStartISO: string
@@ -100,7 +98,8 @@ export function usePublishWeek() {
   return useMutation({
     mutationFn: runPublish,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: publishedWeeksKey })
+      queryClient.invalidateQueries({ queryKey: ['publishedHistory'] })
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] })
     },
   })
 }
@@ -113,9 +112,13 @@ interface UpdateEventInput {
 }
 
 export function useUpdateCalendarEvent() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ token, calendarId, eventId, patch }: UpdateEventInput) =>
       updateEvent(token, calendarId, eventId, patch),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] })
+    },
   })
 }
 
@@ -126,9 +129,13 @@ interface DeleteEventInput {
 }
 
 export function useDeleteCalendarEvent() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ token, calendarId, eventId }: DeleteEventInput) =>
       deleteEvent(token, calendarId, eventId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] })
+    },
   })
 }
 
@@ -137,7 +144,7 @@ export function useCalendarEventsForWeek(weekStartISO: string | null) {
   const token = getGoogleAccessToken(session)
 
   return useQuery({
-    queryKey: ['calendarEvents', weekStartISO],
+    queryKey: ['calendarEvents', weekStartISO, !!token],
     queryFn: async (): Promise<CalendarEvent[]> => {
       if (!token || !weekStartISO) throw new Error('Missing params')
       const weekStart = fromISO(weekStartISO)

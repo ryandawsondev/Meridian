@@ -4,7 +4,7 @@ import type { DayPreset } from '../../types'
 import type { BlockFormValues } from '../../schemas'
 import { validateNoOverlap } from '../../schemas'
 import { useCreateBlock, useUpdateBlock, useDeleteBlock, useReorderBlocks } from '../../hooks/useBlocks'
-import { useUpdateDayPreset } from '../../hooks/usePresets'
+import { useUpdateDayPreset, useDayPresets } from '../../hooks/usePresets'
 import { useUiStore } from '../../stores/uiStore'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -37,8 +37,11 @@ interface DayPresetEditorProps {
 
 type EditingBlock = { id: string; values: Partial<BlockFormValues> } | null
 
-export default function DayPresetEditor({ preset, open, onClose }: DayPresetEditorProps) {
-  const [name, setName] = useState(preset.name)
+export default function DayPresetEditor({ preset: initialPreset, open, onClose }: DayPresetEditorProps) {
+  const { data: allPresets = [] } = useDayPresets()
+  const preset = allPresets.find((p) => p.id === initialPreset.id) ?? initialPreset
+
+  const [name, setName] = useState(initialPreset.name)
   const [nameSaved, setNameSaved] = useState(false)
   const [blockDialogOpen, setBlockDialogOpen] = useState(false)
   const [editingBlock, setEditingBlock] = useState<EditingBlock>(null)

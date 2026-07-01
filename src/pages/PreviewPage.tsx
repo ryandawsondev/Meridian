@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog'
 
-type EditTarget = { blockId: string; originalTitle: string }
+type EditTarget = { blockId: string; originalTitle: string; dateISO: string }
 
 const VIEW_OPTIONS = [
   { value: 'day', label: 'Day', Icon: Calendar },
@@ -53,8 +53,8 @@ export default function PreviewPage() {
   const [publishResult, setPublishResult] = useState<PublishResult | null>(null)
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false)
 
-  function handleEditBlock(blockId: string, originalTitle: string) {
-    setEditTarget({ blockId, originalTitle })
+  function handleEditBlock(blockId: string, originalTitle: string, dateISO: string) {
+    setEditTarget({ blockId, originalTitle, dateISO })
   }
 
   async function handlePublishConfirmed() {
@@ -218,7 +218,9 @@ export default function PreviewPage() {
       {/* Edit dialog */}
       {editTarget && (
         <EditBlockDialog
+          key={`${editTarget.dateISO}_${editTarget.blockId}`}
           blockId={editTarget.blockId}
+          dateISO={editTarget.dateISO}
           originalTitle={editTarget.originalTitle}
           onClose={() => setEditTarget(null)}
         />
