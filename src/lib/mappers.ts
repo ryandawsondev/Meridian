@@ -1,5 +1,5 @@
-import type { Block, DayPreset, WeekPreset, UserSettings } from '../types'
-import type { DbBlock, DbDayPreset, DbWeekPreset, DbUserSettings } from '../types/db'
+import type { Block, DayPreset, WeekPreset, UserSettings, SectionPreset } from '../types'
+import type { DbBlock, DbDayPreset, DbWeekPreset, DbUserSettings, DbSectionPreset, DbSectionPresetBlock } from '../types/db'
 
 export function mapBlock(db: DbBlock): Block {
   return {
@@ -29,6 +29,26 @@ export function mapWeekPreset(db: DbWeekPreset): WeekPreset {
     }
   }
   return { id: db.id, name: db.name, days }
+}
+
+export function mapSectionBlock(db: DbSectionPresetBlock): Block {
+  return {
+    id: db.id,
+    title: db.title,
+    startTime: db.start_time,
+    endTime: db.end_time,
+    colour: db.colour,
+    isVariable: db.is_variable,
+    notes: db.notes ?? undefined,
+  }
+}
+
+export function mapSectionPreset(db: DbSectionPreset): SectionPreset {
+  return {
+    id: db.id,
+    name: db.name,
+    blocks: (db.section_preset_blocks ?? []).sort((a, b) => a.order - b.order).map(mapSectionBlock),
+  }
 }
 
 export function mapUserSettings(db: DbUserSettings): UserSettings {

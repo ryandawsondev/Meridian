@@ -41,6 +41,27 @@ export interface DbUserSettings {
   preferred_view: string
 }
 
+export interface DbSectionPresetBlock {
+  id: string
+  section_preset_id: string
+  title: string
+  start_time: string
+  end_time: string
+  colour: string
+  is_variable: boolean
+  notes: string | null
+  order: number
+}
+
+export interface DbSectionPreset {
+  id: string
+  user_id: string
+  name: string
+  created_at: string
+  updated_at: string
+  section_preset_blocks?: DbSectionPresetBlock[]
+}
+
 export interface DbPublishedWeek {
   id: string
   user_id: string
