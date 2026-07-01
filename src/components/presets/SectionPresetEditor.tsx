@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { Pencil, Trash2, Plus, Check, Scissors } from 'lucide-react'
+import { Pencil, Trash2, Plus, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
-import type { DayPreset, SectionPreset } from '../../types'
+import type { SectionPreset } from '../../types'
 import type { BlockFormValues } from '../../schemas'
 import { validateNoOverlap } from '../../schemas'
-import { useCreateBlock, useUpdateBlock, useDeleteBlock } from '../../hooks/useBlocks'
-import { useUpdateDayPreset, useDayPresets } from '../../hooks/usePresets'
-import { useSectionPresets, useImportSectionToDay } from '../../hooks/useSectionPresets'
+import {
+  useCreateSectionBlock,
+  useUpdateSectionBlock,
+  useDeleteSectionBlock,
+} from '../../hooks/useSectionBlocks'
+import { useUpdateSectionPreset, useSectionPresets } from '../../hooks/useSectionPresets'
 import { useUiStore } from '../../stores/uiStore'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -32,16 +35,16 @@ import {
 import BlockForm from './BlockForm'
 import { COLOUR_SWATCHES } from './colourSwatches'
 
-interface DayPresetEditorProps {
-  preset: DayPreset
+interface SectionPresetEditorProps {
+  preset: SectionPreset
   open: boolean
   onClose: () => void
 }
 
 type EditingBlock = { id: string; values: Partial<BlockFormValues> } | null
 
-export default function DayPresetEditor({ preset: initialPreset, open, onClose }: DayPresetEditorProps) {
-  const { data: allPresets = [] } = useDayPresets()
+export default function SectionPresetEditor({ preset: initialPreset, open, onClose }: SectionPresetEditorProps) {
+  const { data: allPresets = [] } = useSectionPresets()
   const preset = allPresets.find((p) => p.id === initialPreset.id) ?? initialPreset
 
   const [name, setName] = useState(initialPreset.name)
@@ -52,16 +55,13 @@ export default function DayPresetEditor({ preset: initialPreset, open, onClose }
   const [newBlockDefaults, setNewBlockDefaults] = useState<Partial<BlockFormValues>>({})
   const [overlapError, setOverlapError] = useState<string | null>(null)
   const [closeAlertOpen, setCloseAlertOpen] = useState(false)
-  const [importSectionOpen, setImportSectionOpen] = useState(false)
 
   const setHasUnsavedChanges = useUiStore((s) => s.setHasUnsavedChanges)
 
-  const updatePreset = useUpdateDayPreset()
-  const createBlock = useCreateBlock()
-  const updateBlock = useUpdateBlock()
-  const deleteBlock = useDeleteBlock()
-  const { data: sectionPresets = [] } = useSectionPresets()
-  const importSection = useImportSectionToDay()
+  const updatePreset = useUpdateSectionPreset()
+  const createBlock = useCreateSectionBlock()
+  const updateBlock = useUpdateSectionBlock()
+  const deleteBlock = useDeleteSectionBlock()
 
   const hasNameChanged = name !== preset.name
 
@@ -103,7 +103,7 @@ export default function DayPresetEditor({ preset: initialPreset, open, onClose }
     setBlockDialogOpen(true)
   }
 
-  function openEditBlock(block: DayPreset['blocks'][number]) {
+  function openEditBlock(block: SectionPreset['blocks'][number]) {
     setEditingBlock({
       id: block.id,
       values: {
@@ -131,7 +131,7 @@ export default function DayPresetEditor({ preset: initialPreset, open, onClose }
       await updateBlock.mutateAsync({ id: editingBlock.id, ...values })
     } else {
       await createBlock.mutateAsync({
-        dayPresetId: preset.id,
+        sectionPresetId: preset.id,
         order: preset.blocks.length,
         ...values,
       })
@@ -144,15 +144,6 @@ export default function DayPresetEditor({ preset: initialPreset, open, onClose }
     await deleteBlock.mutateAsync(id)
   }
 
-  async function handleImportSection(sp: SectionPreset) {
-    await importSection.mutateAsync({
-      dayPresetId: preset.id,
-      sectionPreset: sp,
-      startingOrder: preset.blocks.length,
-    })
-    setImportSectionOpen(false)
-  }
-
   const isBlockSubmitting = createBlock.isPending || updateBlock.isPending
 
   return (
@@ -160,15 +151,15 @@ export default function DayPresetEditor({ preset: initialPreset, open, onClose }
       <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose() }}>
         <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit day preset</DialogTitle>
+            <DialogTitle>Edit section preset</DialogTitle>
           </DialogHeader>
 
           {/* Name */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="preset-name">Name</Label>
+            <Label htmlFor="section-preset-name">Name</Label>
             <div className="flex gap-2">
               <Input
-                id="preset-name"
+                id="section-preset-name"
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
               />
@@ -252,10 +243,6 @@ export default function DayPresetEditor({ preset: initialPreset, open, onClose }
           </div>
 
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setImportSectionOpen(true)}>
-              <Scissors className="mr-1.5 h-3.5 w-3.5" />
-              Import section
-            </Button>
             <Button variant="outline" size="sm" onClick={openAddBlock}>
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Add block
@@ -284,62 +271,13 @@ export default function DayPresetEditor({ preset: initialPreset, open, onClose }
         </DialogContent>
       </Dialog>
 
-      {/* Import section preset dialog */}
-      <Dialog open={importSectionOpen} onOpenChange={setImportSectionOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Import section preset</DialogTitle>
-          </DialogHeader>
-          {sectionPresets.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              No section presets yet. Create one in the Section Presets tab first.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {sectionPresets.map((sp) => (
-                <button
-                  key={sp.id}
-                  className="flex items-center gap-3 rounded-md border border-input p-3 text-left transition-colors hover:bg-muted disabled:opacity-50"
-                  onClick={() => handleImportSection(sp)}
-                  disabled={importSection.isPending || sp.blocks.length === 0}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{sp.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {sp.blocks.length === 0
-                        ? 'No blocks'
-                        : `${sp.blocks.length} block${sp.blocks.length !== 1 ? 's' : ''}`}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 gap-1">
-                    {sp.blocks.slice(0, 4).map((b) => (
-                      <div
-                        key={b.id}
-                        className="h-4 w-4 rounded-full"
-                        style={{ backgroundColor: b.colour }}
-                        title={b.title}
-                      />
-                    ))}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setImportSectionOpen(false)}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Unsaved name changes alert */}
       <AlertDialog open={closeAlertOpen} onOpenChange={setCloseAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
             <AlertDialogDescription>
-              Preset name has unsaved changes. Close without saving?
+              Section preset name has unsaved changes. Close without saving?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -16,6 +16,7 @@ import { Button } from '../ui/button'
 
 interface EditBlockDialogProps {
   blockId: string
+  dateISO: string
   originalTitle: string
   onClose: () => void
 }
@@ -27,11 +28,13 @@ interface SubTask {
 
 export default function EditBlockDialog({
   blockId,
+  dateISO,
   originalTitle,
   onClose,
 }: EditBlockDialogProps) {
   const { filledBlocks, setFilledBlock } = usePlanningStore()
-  const existing = filledBlocks[blockId]
+  const filledKey = `${dateISO}_${blockId}`
+  const existing = filledBlocks[filledKey]
 
   const [title, setTitle] = useState(existing?.title ?? '')
   const [notes, setNotes] = useState(existing?.notes ?? '')
@@ -54,7 +57,7 @@ export default function EditBlockDialog({
           ? subTasks.map((s) => ({ title: s.title, notes: s.notes || undefined }))
           : undefined,
     }
-    setFilledBlock(blockId, filled)
+    setFilledBlock(filledKey, filled)
     onClose()
   }
 

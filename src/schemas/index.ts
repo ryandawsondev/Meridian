@@ -50,6 +50,12 @@ export const weekPresetSchema = z.object({
   }),
 })
 
+export const sectionPresetSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1, 'Name is required'),
+  blocks: z.array(blockSchema),
+})
+
 export const filledBlockSchema = z.object({
   blockId: z.string().uuid(),
   title: z.string().min(1),

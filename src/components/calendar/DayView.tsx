@@ -24,7 +24,7 @@ function computeTimeRange(blocks: PreviewBlock[]): { minHour: number; maxHour: n
 
 interface DayViewProps {
   days: PreviewDay[]
-  onEditBlock: (blockId: string, originalTitle: string) => void
+  onEditBlock: (blockId: string, originalTitle: string, dateISO: string) => void
 }
 
 export default function DayView({ days, onEditBlock }: DayViewProps) {
@@ -146,7 +146,7 @@ export default function DayView({ days, onEditBlock }: DayViewProps) {
               block={block}
               onEdit={
                 block.isVariable
-                  ? () => onEditBlock(block.blockId, block.originalTitle)
+                  ? () => onEditBlock(block.blockId, block.originalTitle, selectedDay.dateISO)
                   : undefined
               }
             />

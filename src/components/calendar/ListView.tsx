@@ -3,7 +3,7 @@ import BlockCard from './BlockCard'
 
 interface ListViewProps {
   days: PreviewDay[]
-  onEditBlock: (blockId: string, originalTitle: string) => void
+  onEditBlock: (blockId: string, originalTitle: string, dateISO: string) => void
 }
 
 export default function ListView({ days, onEditBlock }: ListViewProps) {
@@ -31,7 +31,7 @@ export default function ListView({ days, onEditBlock }: ListViewProps) {
                 block={block}
                 onEdit={
                   block.isVariable
-                    ? () => onEditBlock(block.blockId, block.originalTitle)
+                    ? () => onEditBlock(block.blockId, block.originalTitle, day.dateISO)
                     : undefined
                 }
               />

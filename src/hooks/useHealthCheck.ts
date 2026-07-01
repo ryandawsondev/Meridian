@@ -40,7 +40,7 @@ export function useSupabaseHealth(hasSession: boolean) {
 
 export function useGoogleCalendarHealth(token: string | null) {
   return useQuery({
-    queryKey: ['health', 'googleCalendar'],
+    queryKey: ['health', 'googleCalendar', !!token],
     queryFn: () => pingGoogleCalendar(token!),
     enabled: !!token,
     ...OPTS,
