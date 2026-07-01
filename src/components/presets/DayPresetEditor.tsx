@@ -29,7 +29,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../ui/alert-dialog'
-import BlockForm, { COLOUR_SWATCHES } from './BlockForm'
+import BlockForm from './BlockForm'
+import { COLOUR_SWATCHES } from './colourSwatches'
 
 interface DayPresetEditorProps {
   preset: DayPreset

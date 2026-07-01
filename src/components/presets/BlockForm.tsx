@@ -7,11 +7,7 @@ import { Textarea } from '../ui/textarea'
 import { Switch } from '../ui/switch'
 import { Button } from '../ui/button'
 
-export const COLOUR_SWATCHES = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#ef4444',
-  '#f97316', '#eab308', '#22c55e', '#14b8a6',
-  '#06b6d4', '#3b82f6', '#64748b', '#78716c',
-]
+import { COLOUR_SWATCHES } from './colourSwatches'
 
 interface BlockFormProps {
   defaultValues?: Partial<BlockFormValues>
