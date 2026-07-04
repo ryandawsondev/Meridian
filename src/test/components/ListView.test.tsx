@@ -62,16 +62,10 @@ describe('ListView', () => {
     expect(screen.getByText(/no blocks this week/i)).toBeInTheDocument()
   })
 
-  it('renders edit button for variable blocks', () => {
+  it('renders edit button for all blocks', () => {
     render(<ListView days={mockDays} onEditBlock={vi.fn()} />)
-    expect(screen.getByRole('button', { name: /edit block/i })).toBeInTheDocument()
-  })
-
-  it('does not render edit button for fixed blocks', () => {
-    const onEditBlock = vi.fn()
-    render(<ListView days={mockDays} onEditBlock={onEditBlock} />)
-    const editButtons = screen.queryAllByRole('button', { name: /edit block/i })
-    expect(editButtons).toHaveLength(1) // only the variable block
+    const editButtons = screen.getAllByRole('button', { name: /edit block/i })
+    expect(editButtons).toHaveLength(2)
   })
 
   it('calls onEditBlock with correct args when edit clicked', async () => {
@@ -79,7 +73,8 @@ describe('ListView', () => {
     const onEditBlock = vi.fn()
     render(<ListView days={mockDays} onEditBlock={onEditBlock} />)
 
-    await user.click(screen.getByRole('button', { name: /edit block/i }))
+    const editButtons = screen.getAllByRole('button', { name: /edit block/i })
+    await user.click(editButtons[1])
     expect(onEditBlock).toHaveBeenCalledWith('b-2', 'Variable Block', '2024-06-24')
   })
 })
