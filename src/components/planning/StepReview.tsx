@@ -7,6 +7,7 @@ import { getDayName, formatDayLabel, toISO } from '../../lib/date'
 import type { Block } from '../../types'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
+import { haptic } from '../../lib/haptics'
 
 export default function StepReview() {
   const navigate = useNavigate()
@@ -124,7 +125,7 @@ export default function StepReview() {
         <Button variant="outline" onClick={() => setStep(3)}>
           Back
         </Button>
-        <Button onClick={() => navigate('/preview')}>Go to preview</Button>
+        <Button onClick={() => { haptic('success'); navigate('/preview') }}>Go to preview</Button>
       </div>
     </div>
   )

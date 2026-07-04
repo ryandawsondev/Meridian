@@ -29,11 +29,7 @@ export default function ListView({ days, onEditBlock }: ListViewProps) {
               <BlockCard
                 key={block.blockId}
                 block={block}
-                onEdit={
-                  block.isVariable
-                    ? () => onEditBlock(block.blockId, block.originalTitle, day.dateISO)
-                    : undefined
-                }
+                onEdit={() => onEditBlock(block.blockId, block.originalTitle, day.dateISO)}
               />
             ))}
           </div>

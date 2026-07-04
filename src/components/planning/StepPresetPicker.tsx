@@ -5,6 +5,7 @@ import { useWeekPresets } from '../../hooks/usePresets'
 import { usePlanningStore } from '../../stores/planningStore'
 import type { WeekPreset } from '../../types'
 import { Button } from '../ui/button'
+import { haptic } from '../../lib/haptics'
 
 type Selection = { type: 'blank' } | { type: 'preset'; id: string } | null
 
@@ -32,7 +33,7 @@ function PresetCard({
   const filledCount = Object.values(preset.days).filter(Boolean).length
   return (
     <motion.button
-      onClick={onSelect}
+      onClick={() => { haptic('select'); onSelect() }}
       whileTap={{ scale: 0.98 }}
       className={`flex w-full items-start gap-4 rounded-xl border px-5 py-4 text-left transition-colors ${
         selected
@@ -105,7 +106,7 @@ export default function StepPresetPicker({ onNext }: StepPresetPickerProps) {
           {/* Blank week */}
           <motion.div variants={itemVariants}>
             <motion.button
-              onClick={() => setSelection({ type: 'blank' })}
+              onClick={() => { haptic('select'); setSelection({ type: 'blank' }) }}
               whileTap={{ scale: 0.98 }}
               className={`flex w-full items-start gap-4 rounded-xl border border-dashed px-5 py-4 text-left transition-colors ${
                 isBlankSelected
