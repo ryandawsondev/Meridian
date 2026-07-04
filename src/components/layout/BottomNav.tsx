@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { Calendar, LayoutGrid, Clock } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { usePlanningStore } from '../../stores/planningStore'
+import { haptic } from '../../lib/haptics'
 
 const NAV_ITEMS = [
   { to: '/planning', label: 'Plan', Icon: Calendar, primary: true },
@@ -25,6 +26,7 @@ export default function BottomNav() {
               className="relative flex flex-1 flex-col items-center gap-1 py-3"
               whileTap={{ scale: 0.88 }}
               transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+              onTapStart={() => haptic('tap')}
             >
               {/* Active top indicator pill */}
               {isActive && (

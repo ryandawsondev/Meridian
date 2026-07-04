@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import type { PreviewBlock } from '../../hooks/usePlanningPreview'
+import { haptic } from '../../lib/haptics'
 
 interface BlockCardProps {
   block: PreviewBlock
@@ -59,7 +60,7 @@ export default function BlockCard({ block, onEdit, compact = false }: BlockCardP
           <div className="flex shrink-0 items-center gap-1">
             {hasSubTasks && (
               <button
-                onClick={() => setExpanded(!expanded)}
+                onClick={() => { haptic('tap'); setExpanded(!expanded) }}
                 className="-m-1 flex items-center gap-0.5 rounded p-1 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label={expanded ? 'Collapse sub-tasks' : 'Expand sub-tasks'}
               >
@@ -74,7 +75,7 @@ export default function BlockCard({ block, onEdit, compact = false }: BlockCardP
             {onEdit && (
               <button
                 className="-m-1 flex h-8 w-8 items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                onClick={onEdit}
+                onClick={() => { haptic('tap'); onEdit?.() }}
                 aria-label="Edit block"
               >
                 <Pencil className="h-3 w-3" />
