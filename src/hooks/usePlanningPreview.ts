@@ -48,9 +48,9 @@ export function usePlanningPreview(): PreviewDay[] | null {
         return {
           blockId: block.id,
           originalTitle: block.title,
-          displayTitle: block.isVariable ? (filled?.title || block.title) : block.title,
-          notes: block.isVariable ? filled?.notes : block.notes,
-          subTasks: block.isVariable ? filled?.subTasks : undefined,
+          displayTitle: filled?.title || block.title,
+          notes: filled?.notes ?? block.notes,
+          subTasks: filled?.subTasks,
           startTime: block.startTime,
           endTime: block.endTime,
           colour: block.colour,

@@ -1,6 +1,6 @@
 import { useState } from 'react'
+import { Pencil } from 'lucide-react'
 import type { PreviewDay, PreviewBlock } from '../../hooks/usePlanningPreview'
-import BlockCard from './BlockCard'
 
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number)
@@ -88,14 +88,15 @@ export default function DayView({ days, onEditBlock }: DayViewProps) {
                     {block.startTime}
                   </span>
                   <div
-                    className="flex h-11 flex-1 items-center overflow-hidden rounded border px-2.5"
+                    className="flex h-11 flex-1 cursor-pointer items-center overflow-hidden rounded border px-2.5"
                     style={{
                       borderColor: block.colour,
                       backgroundColor: block.colour + '1a',
                       borderLeft: `3px solid ${block.colour}`,
                     }}
+                    onClick={() => onEditBlock(block.blockId, block.originalTitle, selectedDay.dateISO)}
                   >
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="truncate text-[11px] font-semibold leading-tight text-foreground">
                         {block.displayTitle}
                       </p>
@@ -103,6 +104,7 @@ export default function DayView({ days, onEditBlock }: DayViewProps) {
                         {block.startTime}–{block.endTime}
                       </p>
                     </div>
+                    <Pencil className="ml-2 h-3 w-3 shrink-0 text-muted-foreground" />
                   </div>
                 </div>
               ))}
@@ -111,25 +113,6 @@ export default function DayView({ days, onEditBlock }: DayViewProps) {
         </div>
       )}
 
-      {/* Detail cards for edit access */}
-      {sorted.length > 0 && (
-        <div className="flex flex-col gap-2 pt-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Details
-          </p>
-          {sorted.map((block) => (
-            <BlockCard
-              key={block.blockId}
-              block={block}
-              onEdit={
-                block.isVariable
-                  ? () => onEditBlock(block.blockId, block.originalTitle, selectedDay.dateISO)
-                  : undefined
-              }
-            />
-          ))}
-        </div>
-      )}
     </div>
   )
 }

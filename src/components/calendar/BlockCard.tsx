@@ -40,11 +40,7 @@ export default function BlockCard({ block, onEdit, compact = false }: BlockCardP
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <p
-              className={`font-medium leading-tight ${compact ? 'text-xs' : 'text-sm'} ${
-                block.isVariable && block.displayTitle === block.originalTitle
-                  ? 'text-muted-foreground'
-                  : ''
-              }`}
+              className={`font-medium leading-tight ${compact ? 'text-xs' : 'text-sm'}`}
             >
               {block.displayTitle}
             </p>
@@ -75,7 +71,7 @@ export default function BlockCard({ block, onEdit, compact = false }: BlockCardP
                 )}
               </button>
             )}
-            {block.isVariable && onEdit && (
+            {onEdit && (
               <button
                 className="-m-1 flex h-8 w-8 items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={onEdit}
