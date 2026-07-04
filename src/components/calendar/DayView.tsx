@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Pencil } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
 import type { PreviewDay, PreviewBlock } from '../../hooks/usePlanningPreview'
+import { haptic } from '../../lib/haptics'
 
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number)
@@ -14,6 +16,12 @@ function formatHourLabel(hour: number): string {
   return `${hour - 12}pm`
 }
 
+const slideVariants = {
+  enter: (dir: number) => ({ x: dir > 0 ? 48 : -48, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -48 : 48, opacity: 0 }),
+}
+
 interface DayViewProps {
   days: PreviewDay[]
   onEditBlock: (blockId: string, originalTitle: string, dateISO: string) => void
@@ -21,6 +29,14 @@ interface DayViewProps {
 
 export default function DayView({ days, onEditBlock }: DayViewProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [direction, setDirection] = useState(0)
+
+  function navigate(newIndex: number) {
+    setDirection(newIndex > selectedIndex ? 1 : -1)
+    setSelectedIndex(newIndex)
+    haptic('tap')
+  }
+
   const selectedDay = days[selectedIndex]
 
   const sorted = [...selectedDay.blocks].sort(
@@ -49,7 +65,7 @@ export default function DayView({ days, onEditBlock }: DayViewProps) {
         {days.map((day, i) => (
           <button
             key={day.dateISO}
-            onClick={() => setSelectedIndex(i)}
+            onClick={() => navigate(i)}
             className={`flex shrink-0 flex-col items-center rounded-lg px-3 py-2 text-center transition-colors ${
               i === selectedIndex
                 ? 'bg-primary text-primary-foreground'
@@ -67,58 +83,84 @@ export default function DayView({ days, onEditBlock }: DayViewProps) {
         ))}
       </div>
 
-      {/* Block list */}
-      {sorted.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-input px-6 py-10 text-center">
-          <p className="text-sm text-muted-foreground">No blocks</p>
-        </div>
-      ) : (
-        <div className="flex flex-col">
-          {hours.map((hour) => {
-            const blocks = blocksByHour.get(hour) ?? []
-            return (
-              <div key={hour}>
-                {/* Hour label */}
-                <div className="flex items-center gap-2 py-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground w-10 text-right shrink-0">
-                    {formatHourLabel(hour)}
-                  </span>
-                  <div className="flex-1 border-t border-border/40" />
+      {/* Swipeable block list */}
+      <div
+        className="overflow-hidden"
+        onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
+      >
+        <motion.div
+          onPanEnd={(_, info) => {
+            const horizontal = Math.abs(info.offset.x) > Math.abs(info.offset.y)
+            if (!horizontal) return
+            if (info.offset.x < -40 && selectedIndex < days.length - 1) {
+              navigate(selectedIndex + 1)
+            } else if (info.offset.x > 40 && selectedIndex > 0) {
+              navigate(selectedIndex - 1)
+            }
+          }}
+        >
+          <AnimatePresence mode="popLayout" custom={direction}>
+            <motion.div
+              key={selectedIndex}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+            >
+              {sorted.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-input px-6 py-10 text-center">
+                  <p className="text-sm text-muted-foreground">No blocks</p>
                 </div>
+              ) : (
+                <div className="flex flex-col">
+                  {hours.map((hour) => {
+                    const blocks = blocksByHour.get(hour) ?? []
+                    return (
+                      <div key={hour}>
+                        <div className="flex items-center gap-2 py-1">
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground w-10 text-right shrink-0">
+                            {formatHourLabel(hour)}
+                          </span>
+                          <div className="flex-1 border-t border-border/40" />
+                        </div>
 
-                {/* Blocks in this hour */}
-                {blocks.map((block) => (
-                  <div key={block.blockId} className="flex items-center gap-2 py-0.5">
-                    <span className="text-[10px] text-muted-foreground w-10 text-right shrink-0">
-                      {block.startTime}
-                    </span>
-                    <div
-                      className="flex h-11 flex-1 cursor-pointer items-center overflow-hidden rounded border px-2.5"
-                      style={{
-                        borderColor: block.colour,
-                        backgroundColor: block.colour + '1a',
-                        borderLeft: `3px solid ${block.colour}`,
-                      }}
-                      onClick={() => onEditBlock(block.blockId, block.originalTitle, selectedDay.dateISO)}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[11px] font-semibold leading-tight text-foreground">
-                          {block.displayTitle}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {block.startTime}–{block.endTime}
-                        </p>
+                        {blocks.map((block) => (
+                          <div key={block.blockId} className="flex items-center gap-2 py-0.5">
+                            <span className="text-[10px] text-muted-foreground w-10 text-right shrink-0">
+                              {block.startTime}
+                            </span>
+                            <div
+                              className="flex h-11 flex-1 cursor-pointer items-center overflow-hidden rounded border px-2.5"
+                              style={{
+                                borderColor: block.colour,
+                                backgroundColor: block.colour + '1a',
+                                borderLeft: `3px solid ${block.colour}`,
+                              }}
+                              onClick={() => onEditBlock(block.blockId, block.originalTitle, selectedDay.dateISO)}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-[11px] font-semibold leading-tight text-foreground">
+                                  {block.displayTitle}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {block.startTime}–{block.endTime}
+                                </p>
+                              </div>
+                              <Pencil className="ml-2 h-3 w-3 shrink-0 text-muted-foreground" />
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <Pencil className="ml-2 h-3 w-3 shrink-0 text-muted-foreground" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          })}
-        </div>
-      )}
-
+                    )
+                  })}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+      </div>
     </div>
   )
 }

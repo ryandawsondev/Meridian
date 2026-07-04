@@ -42,8 +42,6 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 
-// Test comment
-
 export default function App() {
   return (
     <ErrorBoundary>
