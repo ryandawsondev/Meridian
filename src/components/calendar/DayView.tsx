@@ -27,17 +27,20 @@ export default function DayView({ days, onEditBlock }: DayViewProps) {
     (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
   )
 
-  // Group blocks by hour so we can render an hour label before each new hour
-  const grouped: { hour: number; blocks: PreviewBlock[] }[] = []
+  const blocksByHour = new Map<number, PreviewBlock[]>()
   for (const block of sorted) {
     const hour = Math.floor(timeToMinutes(block.startTime) / 60)
-    const last = grouped[grouped.length - 1]
-    if (!last || last.hour !== hour) {
-      grouped.push({ hour, blocks: [block] })
-    } else {
-      last.blocks.push(block)
-    }
+    if (!blocksByHour.has(hour)) blocksByHour.set(hour, [])
+    blocksByHour.get(hour)!.push(block)
   }
+
+  const startHour = sorted.length > 0
+    ? Math.max(0, Math.floor(timeToMinutes(sorted[0].startTime) / 60) - 1)
+    : 8
+  const endHour = sorted.length > 0
+    ? Math.ceil(timeToMinutes(sorted[sorted.length - 1].endTime) / 60)
+    : 18
+  const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i)
 
   return (
     <div className="flex flex-col gap-4">
@@ -71,45 +74,48 @@ export default function DayView({ days, onEditBlock }: DayViewProps) {
         </div>
       ) : (
         <div className="flex flex-col">
-          {grouped.map(({ hour, blocks }) => (
-            <div key={hour}>
-              {/* Hour label */}
-              <div className="flex items-center gap-2 py-1">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground w-10 text-right shrink-0">
-                  {formatHourLabel(hour)}
-                </span>
-                <div className="flex-1 border-t border-border/40" />
-              </div>
-
-              {/* Blocks in this hour */}
-              {blocks.map((block) => (
-                <div key={block.blockId} className="flex items-center gap-2 py-0.5">
-                  <span className="text-[10px] text-muted-foreground w-10 text-right shrink-0">
-                    {block.startTime}
+          {hours.map((hour) => {
+            const blocks = blocksByHour.get(hour) ?? []
+            return (
+              <div key={hour}>
+                {/* Hour label */}
+                <div className="flex items-center gap-2 py-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground w-10 text-right shrink-0">
+                    {formatHourLabel(hour)}
                   </span>
-                  <div
-                    className="flex h-11 flex-1 cursor-pointer items-center overflow-hidden rounded border px-2.5"
-                    style={{
-                      borderColor: block.colour,
-                      backgroundColor: block.colour + '1a',
-                      borderLeft: `3px solid ${block.colour}`,
-                    }}
-                    onClick={() => onEditBlock(block.blockId, block.originalTitle, selectedDay.dateISO)}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[11px] font-semibold leading-tight text-foreground">
-                        {block.displayTitle}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {block.startTime}–{block.endTime}
-                      </p>
-                    </div>
-                    <Pencil className="ml-2 h-3 w-3 shrink-0 text-muted-foreground" />
-                  </div>
+                  <div className="flex-1 border-t border-border/40" />
                 </div>
-              ))}
-            </div>
-          ))}
+
+                {/* Blocks in this hour */}
+                {blocks.map((block) => (
+                  <div key={block.blockId} className="flex items-center gap-2 py-0.5">
+                    <span className="text-[10px] text-muted-foreground w-10 text-right shrink-0">
+                      {block.startTime}
+                    </span>
+                    <div
+                      className="flex h-11 flex-1 cursor-pointer items-center overflow-hidden rounded border px-2.5"
+                      style={{
+                        borderColor: block.colour,
+                        backgroundColor: block.colour + '1a',
+                        borderLeft: `3px solid ${block.colour}`,
+                      }}
+                      onClick={() => onEditBlock(block.blockId, block.originalTitle, selectedDay.dateISO)}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[11px] font-semibold leading-tight text-foreground">
+                          {block.displayTitle}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {block.startTime}–{block.endTime}
+                        </p>
+                      </div>
+                      <Pencil className="ml-2 h-3 w-3 shrink-0 text-muted-foreground" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })}
         </div>
       )}
 
