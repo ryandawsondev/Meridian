@@ -1,10 +1,11 @@
-import { useState, useEffect, type ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Settings, WifiOff } from 'lucide-react'
 import { useLocation, Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { toast } from 'sonner'
 import { useUiStore } from '../../stores/uiStore'
 import { usePlanningStore } from '../../stores/planningStore'
+import { useIsOnline } from '../../hooks/useIsOnline'
 import BottomNav from './BottomNav'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 
@@ -14,7 +15,7 @@ interface AppShellProps {
 
 export default function AppShell({ children }: AppShellProps) {
   const location = useLocation()
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const isOnline = useIsOnline()
   const theme = useUiStore((s) => s.theme)
   const setTheme = useUiStore((s) => s.setTheme)
   const checkStaleness = usePlanningStore((s) => s.checkStaleness)
@@ -31,17 +32,6 @@ export default function AppShell({ children }: AppShellProps) {
       toast.info('Previous planning session expired — starting fresh.')
     }
   }, [checkStaleness])
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

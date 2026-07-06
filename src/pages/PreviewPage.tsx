@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, List, LayoutGrid, CheckCircle2, AlertCircle, Loader2, Info } from 'lucide-react'
+import { Calendar, List, LayoutGrid, CheckCircle2, AlertCircle, Loader2, Info, WifiOff } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
+import { useIsOnline } from '../hooks/useIsOnline'
 import { usePlanningPreview } from '../hooks/usePlanningPreview'
 import { useUiStore } from '../stores/uiStore'
 import { usePlanningStore } from '../stores/planningStore'
@@ -48,6 +49,7 @@ export default function PreviewPage() {
   const { session } = useAuth()
   const planDays = usePlanningPreview()
   const weekRange = useWeekRange(targetWeekStart)
+  const isOnline = useIsOnline()
   const publishWeek = usePublishWeek()
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
   const [publishResult, setPublishResult] = useState<PublishResult | null>(null)
@@ -58,6 +60,10 @@ export default function PreviewPage() {
   }
 
   async function handlePublishConfirmed() {
+    if (!navigator.onLine) {
+      setPublishConfirmOpen(false)
+      return
+    }
     const token = getGoogleAccessToken(session)
     if (!token || !planDays || !targetWeekStart) return
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -208,9 +214,16 @@ export default function PreviewPage() {
           </Button>
           <Button
             onClick={() => setPublishConfirmOpen(true)}
-            disabled={publishWeek.isPending || !token}
+            disabled={publishWeek.isPending || !token || !isOnline}
           >
-            Publish to Calendar
+            {!isOnline ? (
+              <span className="flex items-center gap-1.5">
+                <WifiOff className="h-3.5 w-3.5" />
+                Offline
+              </span>
+            ) : (
+              'Publish to Calendar'
+            )}
           </Button>
         </div>
       </div>

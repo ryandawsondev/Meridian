@@ -97,6 +97,7 @@ export function usePublishWeek() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: runPublish,
+    networkMode: 'always',
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['publishedHistory'] })
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] })
