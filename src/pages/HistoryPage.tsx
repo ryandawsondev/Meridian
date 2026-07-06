@@ -1,12 +1,23 @@
 import { useState } from 'react'
-import { Calendar, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+import { Calendar, ChevronDown, ChevronUp, Loader2, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { usePublishedHistory, HISTORY_MONTHS_STEP } from '../hooks/usePublishedHistory'
-import { useCalendarEventsForWeek } from '../hooks/useGoogleCalendar'
+import { useCalendarEventsForWeek, useWipeWeek } from '../hooks/useGoogleCalendar'
 import { useAuth } from '../hooks/useAuth'
 import { getGoogleAccessToken, signIn } from '../lib/auth'
 import { formatWeekLabel, fromISO } from '../lib/date'
 import { Button } from '../components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../components/ui/alert-dialog'
 import type { DbPublishedWeek } from '../types/db'
 import type { CalendarEvent } from '../lib/googleCalendar'
 
@@ -124,18 +135,20 @@ function WeekDetail({ weekStartISO }: { weekStartISO: string }) {
 function WeekCard({ week }: { week: DbPublishedWeek }) {
   const [expanded, setExpanded] = useState(false)
   const label = formatWeekLabel(fromISO(week.week_start))
+  const { session } = useAuth()
+  const token = getGoogleAccessToken(session)
+  const { mutate: wipeWeek, isPending: isWiping } = useWipeWeek()
 
   return (
     <div className="overflow-hidden rounded-xl border border-input bg-card">
-      <button
-        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/50"
-        onClick={() => setExpanded((e) => !e)}
-        aria-expanded={expanded}
-      >
-        <div className="flex items-center gap-3">
+      <div className="flex w-full items-center justify-between px-4 py-3">
+        <button
+          className="flex flex-1 items-center gap-3 text-left"
+          onClick={() => setExpanded((e) => !e)}
+          aria-expanded={expanded}
+        >
           <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
           <div>
-            {/* Week range is primary */}
             <p className="text-sm font-semibold">{label}</p>
             <p className="text-xs text-muted-foreground">
               Published{' '}
@@ -146,13 +159,61 @@ function WeekCard({ week }: { week: DbPublishedWeek }) {
               }).format(new Date(week.created_at))}
             </p>
           </div>
+        </button>
+        <div className="flex items-center gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                disabled={isWiping || !token}
+                aria-label="Wipe week"
+              >
+                {isWiping ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Wipe {label}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will delete all Google Calendar events for this week and remove the
+                  published record. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    if (!token) return
+                    wipeWeek({
+                      token,
+                      weekStartISO: week.week_start,
+                      publishedWeekId: week.id,
+                    })
+                  }}
+                >
+                  Wipe week
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <button
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted"
+            onClick={() => setExpanded((e) => !e)}
+            aria-label={expanded ? 'Collapse' : 'Expand'}
+          >
+            {expanded ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </button>
         </div>
-        {expanded ? (
-          <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-        )}
-      </button>
+      </div>
 
       <AnimatePresence>
         {expanded && (

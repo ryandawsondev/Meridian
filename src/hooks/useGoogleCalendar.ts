@@ -140,6 +140,39 @@ export function useDeleteCalendarEvent() {
   })
 }
 
+interface WipeWeekInput {
+  token: string
+  weekStartISO: string
+  publishedWeekId: string
+}
+
+export function useWipeWeek() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ token, weekStartISO, publishedWeekId }: WipeWeekInput) => {
+      const weekStart = fromISO(weekStartISO)
+      const weekEnd = fromISO(weekStartISO)
+      weekEnd.setDate(weekEnd.getDate() + 6)
+      weekEnd.setHours(23, 59, 59, 999)
+
+      const events = await getEventsForWeek(token, 'primary', weekStart, weekEnd)
+      await Promise.allSettled(
+        events.map((event) => deleteEvent(token, 'primary', event.id))
+      )
+
+      const { error } = await supabase
+        .from('published_weeks')
+        .delete()
+        .eq('id', publishedWeekId)
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: (_data, { weekStartISO }) => {
+      queryClient.invalidateQueries({ queryKey: ['publishedHistory'] })
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents', weekStartISO] })
+    },
+  })
+}
+
 export function useCalendarEventsForWeek(weekStartISO: string | null) {
   const { session } = useAuth()
   const token = getGoogleAccessToken(session)
