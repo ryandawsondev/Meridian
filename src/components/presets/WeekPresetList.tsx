@@ -9,6 +9,7 @@ import {
 } from '../../hooks/usePresets'
 import type { WeekPreset } from '../../types'
 import { Button } from '../ui/button'
+import { Skeleton } from '../ui/skeleton'
 import { Input } from '../ui/input'
 import {
   Dialog,
@@ -68,7 +69,7 @@ export default function WeekPresetList() {
     return (
       <div className="flex flex-col gap-2 py-4">
         {[1, 2, 3].map((n) => (
-          <div key={n} className="h-20 animate-pulse rounded-lg bg-muted" />
+          <Skeleton key={n} className="h-20 w-full" />
         ))}
       </div>
     )

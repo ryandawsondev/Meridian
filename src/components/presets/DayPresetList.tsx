@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog'
 import DayPresetEditor from './DayPresetEditor'
+import { Skeleton } from '../ui/skeleton'
 
 export default function DayPresetList() {
   const { data: presets = [], isLoading, error, refetch } = useDayPresets()
@@ -58,7 +59,7 @@ export default function DayPresetList() {
       <div className="flex flex-col gap-2 py-4" aria-label="Loading">
         <span className="sr-only">Loading</span>
         {[1, 2, 3].map((n) => (
-          <div key={n} className="h-16 animate-pulse rounded-lg bg-muted" />
+          <Skeleton key={n} className="h-16 w-full" />
         ))}
       </div>
     )

@@ -8,6 +8,7 @@ import {
 } from '../../hooks/useSectionPresets'
 import type { SectionPreset } from '../../types'
 import { Button } from '../ui/button'
+import { Skeleton } from '../ui/skeleton'
 import { Input } from '../ui/input'
 import { Badge } from '../ui/badge'
 import {
@@ -58,7 +59,7 @@ export default function SectionPresetList() {
       <div className="flex flex-col gap-2 py-4" aria-label="Loading">
         <span className="sr-only">Loading</span>
         {[1, 2, 3].map((n) => (
-          <div key={n} className="h-16 animate-pulse rounded-lg bg-muted" />
+          <Skeleton key={n} className="h-16 w-full" />
         ))}
       </div>
     )

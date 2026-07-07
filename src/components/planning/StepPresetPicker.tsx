@@ -5,6 +5,7 @@ import { useWeekPresets } from '../../hooks/usePresets'
 import { usePlanningStore } from '../../stores/planningStore'
 import type { WeekPreset } from '../../types'
 import { Button } from '../ui/button'
+import { Skeleton } from '../ui/skeleton'
 import { haptic } from '../../lib/haptics'
 
 type Selection = { type: 'blank' } | { type: 'preset'; id: string } | null
@@ -91,7 +92,7 @@ export default function StepPresetPicker({ onNext }: StepPresetPickerProps) {
       {isLoading && (
         <div className="flex flex-col gap-2">
           {[1, 2, 3].map((n) => (
-            <div key={n} className="h-20 animate-pulse rounded-xl bg-muted" />
+            <Skeleton key={n} className="h-20 w-full rounded-xl" />
           ))}
         </div>
       )}
