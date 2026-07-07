@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Loader2, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, RefreshCw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '../hooks/useAuth'
 import { getGoogleAccessToken, signIn } from '../lib/auth'
@@ -7,6 +7,7 @@ import { useCalendarEventsForWeek, useDeleteWeekEvents } from '../hooks/useGoogl
 import { getWeekStart, addDays, fromISO, toISO, formatWeekLabel } from '../lib/date'
 import { Button } from '../components/ui/button'
 import { AnimatedCircularProgressBar } from '../components/ui/animated-circular-progress-bar'
+import { Skeleton } from '../components/ui/skeleton'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,8 +120,20 @@ export default function CalendarManagerPage() {
       </div>
 
       {isLoading && (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="flex flex-col gap-4">
+          {[0, 1].map((i) => (
+            <div key={i}>
+              <Skeleton className="mb-2 h-3 w-24" />
+              <div className="flex flex-col gap-1.5">
+                {[0, 1, 2].map((j) => (
+                  <div key={j} className="rounded-lg border border-input p-3">
+                    <Skeleton className="mb-1.5 h-4 w-2/3" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

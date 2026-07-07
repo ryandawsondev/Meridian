@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Calendar, ChevronDown, ChevronUp, Loader2, Trash2 } from 'lucide-react'
+import { Skeleton } from '../components/ui/skeleton'
 import { motion, AnimatePresence } from 'motion/react'
 import { usePublishedHistory, HISTORY_MONTHS_STEP } from '../hooks/usePublishedHistory'
 import { useCalendarEventsForWeek, useWipeWeek } from '../hooks/useGoogleCalendar'
@@ -69,8 +70,13 @@ function WeekDetail({ weekStartISO }: { weekStartISO: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-4">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      <div className="flex flex-col gap-3 px-4 pb-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="rounded-lg border border-input p-3">
+            <Skeleton className="mb-1.5 h-4 w-2/3" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        ))}
       </div>
     )
   }
@@ -264,8 +270,18 @@ export default function HistoryPage() {
       <p className="mb-6 text-xs text-muted-foreground">Past published weeks</p>
 
       {isLoading && (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="flex flex-col gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="overflow-hidden rounded-xl border border-input bg-card px-4 py-3">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-4 w-4 rounded" />
+                <div className="flex-1">
+                  <Skeleton className="mb-1.5 h-4 w-40" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
