@@ -11,6 +11,7 @@ import PresetsPage from './pages/PresetsPage'
 import PreviewPage from './pages/PreviewPage'
 import HistoryPage from './pages/HistoryPage'
 import SettingsPage from './pages/SettingsPage'
+import CalendarManagerPage from './pages/CalendarManagerPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -106,6 +107,16 @@ export default function App() {
                 <ProtectedRoute>
                   <AppShell>
                     <SettingsPage />
+                  </AppShell>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <ProtectedRoute>
+                  <AppShell>
+                    <CalendarManagerPage />
                   </AppShell>
                 </ProtectedRoute>
               }

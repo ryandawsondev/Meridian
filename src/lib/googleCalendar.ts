@@ -110,6 +110,7 @@ export async function getEventsForWeek(
     timeMax: weekEnd.toISOString(),
     singleEvents: 'true',
     orderBy: 'startTime',
+    maxResults: '2500',
   })
   const url = `${GCAL_BASE}/${encodeURIComponent(calendarId)}/events?${params}`
   const data = await gcalFetch<CalendarEventList>('GET', url, token)
