@@ -205,7 +205,11 @@ export default function DayView({ days, onEditBlock }: DayViewProps) {
         </div>
         <div className="overflow-y-auto" style={{ maxHeight: 560 }}>
           <div className="px-3 py-4">
-            <DayGrid day={selectedDay} onEditBlock={onEditBlock} />
+            {selectedDay.blocks.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">No blocks scheduled</p>
+            ) : (
+              <DayGrid day={selectedDay} onEditBlock={onEditBlock} />
+            )}
           </div>
         </div>
       </div>
