@@ -39,8 +39,8 @@ describe('BottomNav', () => {
     expect(planLink).not.toHaveAttribute('aria-current', 'page')
   })
 
-  it('renders three links', () => {
+  it('renders four links', () => {
     renderNav()
-    expect(screen.getAllByRole('link')).toHaveLength(3)
+    expect(screen.getAllByRole('link')).toHaveLength(4)
   })
 })

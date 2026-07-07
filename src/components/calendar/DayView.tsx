@@ -1,72 +1,188 @@
-import { useState } from 'react'
-import { Pencil } from 'lucide-react'
-import { motion, AnimatePresence } from 'motion/react'
+import { useState, useMemo } from 'react'
 import type { PreviewDay, PreviewBlock } from '../../hooks/usePlanningPreview'
 import { haptic } from '../../lib/haptics'
-
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number)
-  return h * 60 + m
-}
-
-function formatHourLabel(hour: number): string {
-  if (hour === 0) return '12am'
-  if (hour < 12) return `${hour}am`
-  if (hour === 12) return '12pm'
-  return `${hour - 12}pm`
-}
-
-const slideVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 48 : -48, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -48 : 48, opacity: 0 }),
-}
+import { timeToMinutes } from '../../lib/date'
 
 interface DayViewProps {
   days: PreviewDay[]
   onEditBlock: (blockId: string, originalTitle: string, dateISO: string) => void
 }
 
+const HOUR_HEIGHT = 64 // px per hour
+const LEFT_GUTTER = 48 // px for time labels
+const MIN_BLOCK_HEIGHT = 22 // px
+
+function minutesToPx(minutes: number): number {
+  return (minutes / 60) * HOUR_HEIGHT
+}
+
+function formatTime(t: string): string {
+  const [h, m] = t.split(':').map(Number)
+  const period = h < 12 ? 'AM' : 'PM'
+  const hour = h % 12 === 0 ? 12 : h % 12
+  return m === 0 ? `${hour} ${period}` : `${hour}:${String(m).padStart(2, '0')} ${period}`
+}
+
+function TimeGrid({ startHour, endHour }: { startHour: number; endHour: number }) {
+  const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i)
+  return (
+    <>
+      {hours.map((h) => (
+        <div
+          key={h}
+          className="pointer-events-none absolute flex w-full items-start"
+          style={{ top: minutesToPx((h - startHour) * 60) }}
+        >
+          <span className="-mt-[6px] w-[48px] shrink-0 select-none pr-3 text-right text-[11px] leading-none text-muted-foreground">
+            {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
+          </span>
+          <div className="flex-1 border-t border-border" />
+        </div>
+      ))}
+    </>
+  )
+}
+
+function BlockStrip({
+  block,
+  top,
+  height,
+  dateISO,
+  onEdit,
+}: {
+  block: PreviewBlock
+  top: number
+  height: number
+  dateISO: string
+  onEdit: (blockId: string, originalTitle: string, dateISO: string) => void
+}) {
+  const isShort = height < 36
+
+  return (
+    <button
+      onClick={() => {
+        haptic('tap')
+        onEdit(block.blockId, block.originalTitle, dateISO)
+      }}
+      className="absolute left-0 right-0 overflow-hidden rounded-md px-2 text-left transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-60"
+      style={{
+        top,
+        height,
+        backgroundColor: block.colour ? `${block.colour}26` : 'hsl(var(--primary) / 0.12)',
+        borderLeft: `3px solid ${block.colour ?? 'hsl(var(--primary))'}`,
+      }}
+    >
+      {isShort ? (
+        <span
+          className="mt-[4px] block truncate text-[11px] font-medium leading-none"
+          style={{ color: block.colour ?? 'hsl(var(--primary))' }}
+        >
+          {block.displayTitle}
+          <span className="ml-1.5 font-normal opacity-60">{formatTime(block.startTime)}</span>
+        </span>
+      ) : (
+        <div className="flex h-full flex-col justify-center py-1">
+          <span
+            className="block truncate text-[12px] font-medium leading-tight"
+            style={{ color: block.colour ?? 'hsl(var(--primary))' }}
+          >
+            {block.displayTitle}
+          </span>
+          <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">
+            {formatTime(block.startTime)} – {formatTime(block.endTime)}
+          </span>
+        </div>
+      )}
+    </button>
+  )
+}
+
+function DayGrid({
+  day,
+  onEditBlock,
+}: {
+  day: PreviewDay
+  onEditBlock: (blockId: string, originalTitle: string, dateISO: string) => void
+}) {
+  const { startHour, endHour } = useMemo(() => {
+    if (day.blocks.length === 0) return { startHour: 6, endHour: 22 }
+    const allMins = day.blocks.flatMap((b) => [
+      timeToMinutes(b.startTime),
+      timeToMinutes(b.endTime),
+    ])
+    return {
+      startHour: Math.max(0, Math.floor(Math.min(...allMins) / 60) - 1),
+      endHour: Math.min(23, Math.ceil(Math.max(...allMins) / 60) + 1),
+    }
+  }, [day.blocks])
+
+  const positioned = useMemo(() => {
+    const sorted = [...day.blocks].sort(
+      (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
+    )
+
+    // Pass 1: compute natural top and bottom for every block in px
+    const rows = sorted.map((block) => ({
+      block,
+      top: minutesToPx(timeToMinutes(block.startTime) - startHour * 60),
+      naturalBottom: minutesToPx(timeToMinutes(block.endTime) - startHour * 60),
+    }))
+
+    // Pass 2: cascade tops so no block overlaps the previous one.
+    // If block[i-1].top + MIN_BLOCK_HEIGHT > block[i].top, push block[i] down.
+    let prevBottom = -Infinity
+    const cascaded = rows.map(({ block, top, naturalBottom }) => {
+      const adjustedTop = Math.max(top, prevBottom)
+      const height = Math.max(
+        Math.min(naturalBottom, top + (naturalBottom - top)) - adjustedTop,
+        MIN_BLOCK_HEIGHT
+      )
+      prevBottom = adjustedTop + height
+      return { block, top: adjustedTop, height: Math.max(height - 1, 1) }
+    })
+
+    return cascaded
+  }, [day.blocks, startHour])
+
+  const totalHeight = minutesToPx((endHour - startHour + 1) * 60)
+
+  return (
+    <div className="relative" style={{ height: totalHeight }}>
+      <TimeGrid startHour={startHour} endHour={endHour} />
+      <div className="absolute inset-0" style={{ left: LEFT_GUTTER, paddingRight: 4 }}>
+        {positioned.map(({ block, top, height }) => (
+          <BlockStrip
+            key={block.blockId}
+            block={block}
+            top={top}
+            height={height}
+            dateISO={day.dateISO}
+            onEdit={onEditBlock}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function DayView({ days, onEditBlock }: DayViewProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [direction, setDirection] = useState(0)
 
-  function navigate(newIndex: number) {
-    setDirection(newIndex > selectedIndex ? 1 : -1)
-    setSelectedIndex(newIndex)
+  function navigate(i: number) {
+    setSelectedIndex(i)
     haptic('tap')
   }
 
   const selectedDay = days[selectedIndex]
 
-  const sorted = [...selectedDay.blocks].sort(
-    (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
-  )
-
-  const blocksByHour = new Map<number, PreviewBlock[]>()
-  for (const block of sorted) {
-    const hour = Math.floor(timeToMinutes(block.startTime) / 60)
-    if (!blocksByHour.has(hour)) blocksByHour.set(hour, [])
-    blocksByHour.get(hour)!.push(block)
-  }
-
-  const startHour = sorted.length > 0
-    ? Math.max(0, Math.floor(timeToMinutes(sorted[0].startTime) / 60) - 1)
-    : 8
-  const endHour = sorted.length > 0
-    ? Math.ceil(timeToMinutes(sorted[sorted.length - 1].endTime) / 60)
-    : 18
-  const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i)
-
   return (
     <div className="flex flex-col gap-4">
-      {/* Day selector */}
-      <div className="flex overflow-x-auto gap-1 pb-1">
+      <div className="flex gap-1 overflow-x-auto pb-1">
         {days.map((day, i) => (
           <button
             key={day.dateISO}
             onClick={() => navigate(i)}
-            className={`flex shrink-0 flex-col items-center rounded-lg px-3 py-2 text-center transition-colors ${
+            className={`flex shrink-0 flex-col items-center rounded-lg px-3 py-2 transition-colors ${
               i === selectedIndex
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -83,83 +199,19 @@ export default function DayView({ days, onEditBlock }: DayViewProps) {
         ))}
       </div>
 
-      {/* Swipeable block list */}
-      <div
-        className="overflow-hidden"
-        onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
-      >
-        <motion.div
-          onPanEnd={(_, info) => {
-            const horizontal = Math.abs(info.offset.x) > Math.abs(info.offset.y)
-            if (!horizontal) return
-            if (info.offset.x < -40 && selectedIndex < days.length - 1) {
-              navigate(selectedIndex + 1)
-            } else if (info.offset.x > 40 && selectedIndex > 0) {
-              navigate(selectedIndex - 1)
-            }
-          }}
-        >
-          <AnimatePresence mode="popLayout" custom={direction}>
-            <motion.div
-              key={selectedIndex}
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-            >
-              {sorted.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-input px-6 py-10 text-center">
-                  <p className="text-sm text-muted-foreground">No blocks</p>
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  {hours.map((hour) => {
-                    const blocks = blocksByHour.get(hour) ?? []
-                    return (
-                      <div key={hour}>
-                        <div className="flex items-center gap-2 py-1">
-                          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground w-10 text-right shrink-0">
-                            {formatHourLabel(hour)}
-                          </span>
-                          <div className="flex-1 border-t border-border/40" />
-                        </div>
-
-                        {blocks.map((block) => (
-                          <div key={block.blockId} className="flex items-center gap-2 py-0.5">
-                            <span className="text-[10px] text-muted-foreground w-10 text-right shrink-0">
-                              {block.startTime}
-                            </span>
-                            <div
-                              className="flex h-11 flex-1 cursor-pointer items-center overflow-hidden rounded border px-2.5"
-                              style={{
-                                borderColor: block.colour,
-                                backgroundColor: block.colour + '1a',
-                                borderLeft: `3px solid ${block.colour}`,
-                              }}
-                              onClick={() => onEditBlock(block.blockId, block.originalTitle, selectedDay.dateISO)}
-                            >
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-[11px] font-semibold leading-tight text-foreground">
-                                  {block.displayTitle}
-                                </p>
-                                <p className="text-[10px] text-muted-foreground">
-                                  {block.startTime}–{block.endTime}
-                                </p>
-                              </div>
-                              <Pencil className="ml-2 h-3 w-3 shrink-0 text-muted-foreground" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </motion.div>
+      <div className="overflow-hidden rounded-xl border border-border bg-background">
+        <div className="border-b border-border px-4 py-3">
+          <p className="text-sm font-medium">{selectedDay.label}</p>
+        </div>
+        <div className="overflow-y-auto" style={{ maxHeight: 560 }}>
+          <div className="px-3 py-4">
+            {selectedDay.blocks.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">No blocks scheduled</p>
+            ) : (
+              <DayGrid day={selectedDay} onEditBlock={onEditBlock} />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

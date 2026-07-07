@@ -92,3 +92,67 @@ export function getDayName(date: Date): DayName {
   const idx = (date.getDay() + 6) % 7 // 0=Mon … 6=Sun
   return DAY_NAMES[idx]
 }
+
+export function timeToMinutes(t: string): number {
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + m
+}
+
+export function minutesToTime(mins: number): string {
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+/**
+ * Normalise a sorted list of HH:MM block times for display in a time-grid calendar.
+ *
+ * Problems solved:
+ * 1. Back-to-back blocks (A.end == B.start) render as overlapping in Schedule-X
+ *    because it uses closed-interval comparison. Fix: cap every block's display
+ *    end at (next block's start - 1 minute).
+ * 2. Very short blocks (< minDurationMinutes) render as unreadable slivers.
+ *    Fix: extend the display end to start + minDurationMinutes, then clamp to
+ *    the cap from rule 1 so we never overlap the next block.
+ */
+/**
+ * Normalise block display times for Schedule-X time-grid rendering.
+ *
+ * Cascading algorithm: if extending block A to meet minDurationMinutes pushes
+ * past block B's actual start, block B's display start shifts forward to match.
+ * This guarantees zero overlap so Schedule-X never column-splits events.
+ */
+export function normalizeDisplayTimes(
+  blocks: { startTime: string; endTime: string }[],
+  minDurationMinutes = 5
+): { displayStart: string; displayEnd: string }[] {
+  if (blocks.length === 0) return []
+
+  const indexed = blocks.map((b, origIdx) => ({ ...b, origIdx }))
+  const sorted = [...indexed].sort(
+    (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
+  )
+
+  const results: ({ displayStart: string; displayEnd: string } & { origIdx: number })[] =
+    sorted.map((block, idx) => {
+      const startMin = timeToMinutes(block.startTime)
+      const endMin = timeToMinutes(block.endTime)
+      const nextStartMin =
+        idx < sorted.length - 1 ? timeToMinutes(sorted[idx + 1].startTime) : 24 * 60
+
+      const capMin = nextStartMin - 1
+      const desiredEnd = Math.min(Math.max(endMin, startMin + minDurationMinutes), capMin)
+      const displayEndMin = Math.max(desiredEnd, startMin + 1)
+
+      return {
+        origIdx: block.origIdx,
+        displayStart: block.startTime, // always the real start time, never shifted
+        displayEnd: minutesToTime(displayEndMin),
+      }
+    })
+
+  const out = new Array<{ displayStart: string; displayEnd: string }>(blocks.length)
+  for (const r of results)
+    out[r.origIdx] = { displayStart: r.displayStart, displayEnd: r.displayEnd }
+  return out
+}

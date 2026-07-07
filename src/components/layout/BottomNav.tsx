@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Calendar, LayoutGrid, Clock } from 'lucide-react'
+import { Calendar, CalendarDays, LayoutGrid, Clock } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { usePlanningStore } from '../../stores/planningStore'
 import { haptic } from '../../lib/haptics'
@@ -7,6 +7,7 @@ import { haptic } from '../../lib/haptics'
 const NAV_ITEMS = [
   { to: '/planning', label: 'Plan', Icon: Calendar, primary: true },
   { to: '/presets', label: 'Presets', Icon: LayoutGrid, primary: false },
+  { to: '/calendar', label: 'Calendar', Icon: CalendarDays, primary: false },
   { to: '/history', label: 'History', Icon: Clock, primary: false },
 ] as const
 

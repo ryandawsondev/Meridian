@@ -71,7 +71,7 @@ describe('DayView', () => {
 
   it('shows hour labels', () => {
     render(<DayView days={makeDays()} onEditBlock={vi.fn()} />)
-    expect(screen.getByText('8am')).toBeInTheDocument()
-    expect(screen.getByText('12pm')).toBeInTheDocument()
+    expect(screen.getByText('8 AM')).toBeInTheDocument()
+    expect(screen.getByText('12 PM')).toBeInTheDocument()
   })
 })

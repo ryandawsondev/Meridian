@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, List, LayoutGrid, CheckCircle2, AlertCircle, Loader2, Info, WifiOff } from 'lucide-react'
+import { Calendar, List, LayoutGrid, CheckCircle2, AlertCircle, Info, WifiOff } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useIsOnline } from '../hooks/useIsOnline'
 import { usePlanningPreview } from '../hooks/usePlanningPreview'
@@ -16,6 +16,7 @@ import WeekView from '../components/calendar/WeekView'
 import ListView from '../components/calendar/ListView'
 import EditBlockDialog from '../components/calendar/EditBlockDialog'
 import { Button } from '../components/ui/button'
+import { AnimatedCircularProgressBar } from '../components/ui/animated-circular-progress-bar'
 import {
   Dialog,
   DialogContent,
@@ -54,6 +55,7 @@ export default function PreviewPage() {
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
   const [publishResult, setPublishResult] = useState<PublishResult | null>(null)
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false)
+  const [publishProgress, setPublishProgress] = useState<{ done: number; total: number } | null>(null)
 
   function handleEditBlock(blockId: string, originalTitle: string, dateISO: string) {
     setEditTarget({ blockId, originalTitle, dateISO })
@@ -67,15 +69,22 @@ export default function PreviewPage() {
     const token = getGoogleAccessToken(session)
     if (!token || !planDays || !targetWeekStart) return
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-    const result = await publishWeek.mutateAsync({
-      days: planDays,
-      weekStartISO: targetWeekStart,
-      weekPresetId,
-      token,
-      timeZone,
-      userId: session?.user?.id ?? '',
-    })
-    setPublishResult(result)
+    try {
+      const result = await publishWeek.mutateAsync({
+        days: planDays,
+        weekStartISO: targetWeekStart,
+        weekPresetId,
+        token,
+        timeZone,
+        userId: session?.user?.id ?? '',
+        onProgress: (done, total) => setPublishProgress({ done, total }),
+      })
+      setPublishResult(result)
+    } catch {
+      // TanStack Query captures the error; publishWeek.isError shows the banner
+    } finally {
+      setPublishProgress(null)
+    }
   }
 
   function handleDone() {
@@ -137,8 +146,19 @@ export default function PreviewPage() {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center gap-3"
             >
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Publishing to Google Calendar…</p>
+              <AnimatedCircularProgressBar
+                value={publishProgress?.done ?? 0}
+                max={publishProgress?.total ?? totalEvents}
+                min={0}
+                gaugePrimaryColor="hsl(var(--primary))"
+                gaugeSecondaryColor="hsl(var(--muted))"
+                className="size-24 text-base font-semibold"
+              />
+              <p className="text-sm text-muted-foreground">
+                {publishProgress
+                  ? `Publishing ${publishProgress.done} of ${publishProgress.total} events…`
+                  : 'Preparing…'}
+              </p>
             </motion.div>
           </motion.div>
         )}
@@ -258,10 +278,12 @@ export default function PreviewPage() {
       {/* Publish result dialog */}
       {publishResult && (
         <Dialog open onOpenChange={() => {}}>
-          <DialogContent className="max-w-sm">
+          <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {publishResult.failures.length === 0 ? 'Published!' : 'Partially published'}
+                {publishResult.failures.length === 0
+                  ? 'Published!'
+                  : `${publishResult.successCount} of ${publishResult.successCount + publishResult.failures.length} events published`}
               </DialogTitle>
             </DialogHeader>
             <div className="flex flex-col gap-3">
@@ -279,17 +301,21 @@ export default function PreviewPage() {
                 </p>
               </div>
               {publishResult.failures.length > 0 && (
-                <div className="flex flex-col gap-1.5">
-                  <p className="text-sm font-medium text-destructive">
-                    {publishResult.failures.length} event
-                    {publishResult.failures.length !== 1 ? 's' : ''} failed:
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-800 dark:bg-amber-950">
+                  <p className="mb-2 text-xs font-semibold text-amber-800 dark:text-amber-300">
+                    {publishResult.failures.length} event{publishResult.failures.length !== 1 ? 's' : ''} couldn't be added and were skipped:
                   </p>
-                  {publishResult.failures.map((f, i) => (
-                    <div key={i} className="rounded border border-destructive/20 bg-destructive/5 px-3 py-2">
-                      <p className="text-xs font-medium">{f.title}</p>
-                      <p className="text-[10px] text-muted-foreground">{f.dayDate}</p>
-                    </div>
-                  ))}
+                  <div className="flex max-h-36 flex-col gap-1 overflow-y-auto">
+                    {publishResult.failures.map((f, i) => (
+                      <p key={i} className="text-xs text-amber-700 dark:text-amber-400">
+                        <span className="font-medium">{f.title}</span>
+                        <span className="ml-1 text-amber-600 dark:text-amber-500">· {f.dayDate}</span>
+                      </p>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-[10px] text-amber-600 dark:text-amber-500">
+                    You can add these manually in Google Calendar or try publishing again.
+                  </p>
                 </div>
               )}
             </div>

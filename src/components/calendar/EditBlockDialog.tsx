@@ -36,7 +36,7 @@ export default function EditBlockDialog({
   const filledKey = `${dateISO}_${blockId}`
   const existing = filledBlocks[filledKey]
 
-  const [title, setTitle] = useState(existing?.title ?? '')
+  const [title, setTitle] = useState(existing?.title ?? originalTitle)
   const [notes, setNotes] = useState(existing?.notes ?? '')
   const [subTasks, setSubTasks] = useState<SubTask[]>(
     existing?.subTasks?.map((s) => ({ title: s.title, notes: s.notes ?? '' })) ?? []
